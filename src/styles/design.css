@@ -1,0 +1,90 @@
+/*
+  design.css — typography, color palette, and layout components for THIS book.
+  ─────────────────────────────────────────────────────────────────────────────
+  This is the file you customize per book. print.css owns the print geometry
+  (page size, bleed, safe zones) and should not need editing.
+
+  ALL colors below are candidates — soft-proof every one in Acrobat Output
+  Preview with printer-specs/<your-printer>.icc loaded before the final build.
+  Saturated RGB greens, magentas, and deep purples mute or shift in CMYK.
+*/
+
+/* ── Palette ──────────────────────────────────────────────────────────────
+   Replace these with your book's colors. Keep --black pure K-only (#000000)
+   so text and large black areas stay under 300% total ink coverage.
+   ──────────────────────────────────────────────────────────────────────── */
+:root {
+  --accent-1: #E8338A;  /* example: magenta — verify in CMYK */
+  --accent-2: #4AABDF;  /* example: blue */
+  --accent-3: #D4882A;  /* example: amber/ochre — safe gamut */
+  --paper:    #FFFFFF;  /* light page background */
+  --ink:      #000000;  /* K-only black — all body text uses this */
+}
+
+/* ── Typography ───────────────────────────────────────────────────────────
+   Pick your fonts in src/master-header.html (Google Fonts link or @font-face),
+   then set them here. font-size is in pt (never viewport units).
+   ──────────────────────────────────────────────────────────────────────── */
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.heading-xl { font-size: 72pt; font-weight: 700; line-height: 1;   letter-spacing: -0.02em; }
+.heading-lg { font-size: 36pt; font-weight: 700; line-height: 1.1; }
+.heading-sm { font-size: 18pt; font-weight: 400; }
+
+/* ── Body text ────────────────────────────────────────────────────────────
+   Single source of truth for running copy. Per-section CSS may set color or
+   italic/weight, but DO NOT shrink the size to make copy fit — add a page.
+
+   overflow:visible is deliberate: at proof time, copy that doesn't fit spills
+   visibly out of its column instead of being silently clipped. If you see text
+   running off a page in the PDF, split the page — don't shrink the type.
+   ──────────────────────────────────────────────────────────────────────── */
+.body {
+  font-size: 11pt;
+  line-height: 1.55;
+  overflow: visible;
+  position: relative;
+}
+
+/* ── Color blocks — slabs of flat color, the core collage element ───────── */
+.bg-1 { background-color: var(--accent-1); }
+.bg-2 { background-color: var(--accent-2); }
+.bg-3 { background-color: var(--accent-3); }
+.bg-black { background-color: var(--ink); }
+
+/* Rotated color block — set transform: rotate() inline; mind safe margins
+   (a rotation swings corners outward — see print.css notes on rotated elements). */
+.color-block {
+  position: absolute;
+  transform-origin: center center;
+}
+
+/* ── Photo containers ─────────────────────────────────────────────────────
+   For a contained (non-bleed) photo. For a FULL-BLEED photo, set
+   background-image on the .page div instead — see the photo-background stub.
+   ──────────────────────────────────────────────────────────────────────── */
+.photo { overflow: hidden; }
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ── Page number ──────────────────────────────────────────────────────────
+   The counter is wired up in print.css (.page-number::after). This styles it. */
+.page-number {
+  position: absolute;
+  bottom: 0.2in;
+  font-size: 8pt;
+  color: var(--ink);
+}
+.page-number.left   { left: 0.4in; }
+.page-number.right  { right: 0.4in; }
+.page-number.on-dark  { color: #ffffff; }
+.page-number.on-light { color: #000000; }

@@ -1,0 +1,16 @@
+# book.spreads — the ordered list of sections in this book.
+#
+# One spread file per line, in page order. Paths are relative to the project
+# root. Blank lines and lines starting with `#` are ignored, so group/comment
+# freely. This is the ONLY file you edit to wire up sections — the build
+# scripts read it via _build.load_spreads().
+#
+# Each spread file contains one or more <div class="page"> blocks; the build
+# numbers pages globally in the order listed here. Saddle-stitch binding wants
+# an EVEN total page count (master-build.py warns if it's odd).
+#
+# Replace these stubs with your real sections.
+
+src/spreads/01-title.html
+src/spreads/02-photo-spread.html
+src/spreads/03-color-spread.html

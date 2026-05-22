@@ -1,0 +1,40 @@
+# macOS
+.DS_Store
+
+# Build outputs and large asset dirs — stay on disk, not tracked in git
+/builds/
+/exports/
+/printer-specs/
+
+# Photos and binaries (the placeholder SVG in assets/ is force-added in git)
+*.jpg
+*.jpeg
+*.png
+*.tiff
+*.tif
+*.psd
+*.ai
+*.indd
+*.pdf
+*.docx
+*.icc
+*.mp4
+*.mov
+
+# Screenshots and preview temp files
+.screenshots/
+.playwright-mcp/
+.temp/
+
+# Editor
+.vscode/
+
+# Claude Code runtime state
+.claude/
+
+# Python
+__pycache__/
+*.pyc
+
+# Node (if ever added)
+node_modules/

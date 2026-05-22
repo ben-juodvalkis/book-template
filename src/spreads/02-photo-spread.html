@@ -1,0 +1,51 @@
+<!--
+  02-photo-spread.html — TEMPLATE: full-bleed photo background (2 pages).
+  Copy this file as the starting point for any spread where a photo covers the
+  whole page.
+
+  FILL IN:
+    - background-image url() → your photo, path relative to the PROJECT ROOT
+      (e.g. assets/my-photo.jpg). Paths with ../ will NOT resolve.
+    - background-color → a hex close to the photo's edge color, so the bleed
+      gutter is invisible if the photo doesn't quite cover it.
+    - content inside the .safe wrapper, on top of the photo.
+
+  NO PRE-EXPANDED BLEED IMAGE NEEDED: the .page div extends into the bleed via
+  print.css (margin:-0.125in), so background-image:cover reaches the bleed
+  automatically. Use the original photo file directly.
+
+  IMAGE RESOLUTION: aim for ≥300 DPI at the printed size. For a full 8×10 bleed
+  page that's ~2476×3076px.
+-->
+
+<style>
+  @page p1 { background-color: #1a1a1a; }
+  @page p2 { background-color: #1a1a1a; }
+</style>
+
+<!-- ── Page 1 (LEFT-hand) ── -->
+<div class="page" style="
+  page: p1;
+  background-color: #1a1a1a;
+  background-image: url('assets/placeholder.svg');
+  background-size: cover;
+  background-position: center center;
+">
+  <div class="safe-left">
+    <!-- caption / title text on top of the photo, if any -->
+  </div>
+  <span class="page-number left on-dark"></span>
+</div>
+
+<!-- ── Page 2 (RIGHT-hand) ── -->
+<div class="page" style="
+  page: p2;
+  background-color: #1a1a1a;
+  background-image: url('assets/placeholder.svg');
+  background-size: cover;
+  background-position: center center;
+">
+  <div class="safe-right">
+  </div>
+  <span class="page-number right on-dark"></span>
+</div>

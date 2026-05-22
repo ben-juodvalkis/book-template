@@ -1,0 +1,48 @@
+<!--
+  03-color-spread.html — TEMPLATE: solid color background (2 pages).
+  Copy this file as the starting point for any spread with a flat color page
+  background and type/photos arranged on top (the collage layout).
+
+  FILL IN:
+    - @page background-color → palette variables from design.css (var(--accent-1)
+      etc.) or hex values. The two pages can differ.
+    - content inside the .safe wrapper.
+
+  The rotated .color-block below is the signature collage element — duplicate,
+  recolor, and re-rotate it freely. Keep rotated elements ~0.7in from the .page
+  edge so corners clear the trim (see print.css).
+-->
+
+<style>
+  @page p1 { background-color: var(--accent-2); }
+  @page p2 { background-color: var(--accent-3); }
+</style>
+
+<!-- ── Page 1 (LEFT-hand) ── -->
+<div class="page" style="page: p1; background-color: var(--accent-2);">
+
+  <!-- a rotated slab of color, overlapping into the layout -->
+  <div class="color-block bg-1" style="
+    top: 2in; left: 1in; width: 4in; height: 3in;
+    transform: rotate(-6deg);
+  "></div>
+
+  <div class="safe-left" style="top: 0.6in;">
+    <h2 class="heading-lg" style="color: #ffffff;">Section title</h2>
+    <p class="body" style="color: #ffffff; max-width: 5in; margin-top: 0.3in;">
+      Body copy goes here. Replace this with your section content. Keep type
+      inside the safe zone — the build runs a safe-margin check and will warn
+      if ink lands too close to the trim or binding.
+    </p>
+  </div>
+
+  <span class="page-number left on-dark"></span>
+</div>
+
+<!-- ── Page 2 (RIGHT-hand) ── -->
+<div class="page" style="page: p2; background-color: var(--accent-3);">
+  <div class="safe-right">
+    <p class="body">More content on the facing page.</p>
+  </div>
+  <span class="page-number right on-light"></span>
+</div>

@@ -1,0 +1,140 @@
+/*
+  print.css — @page rules, bleed, page structure (active pipeline)
+  Trim size: 8.0×10.0"  |  Final PDF page: 8.125×10.25" (Blurb spec)
+
+  ============================================================================
+  CANONICAL ORIENTATION (do not paraphrase):
+  Page 1 is a LEFT-hand page. Odd pages = LEFT-hand (binding on RIGHT, bleed on
+  LEFT). Even pages = RIGHT-hand (binding on LEFT, bleed on RIGHT). WeasyPrint
+  assigns the first physical page of every render to the CSS `:right` selector,
+  so in this project `@page :right` styles an ODD / LEFT-hand page and
+  `@page :left` styles an EVEN / RIGHT-hand page — the selector NAME is the
+  OPPOSITE of the physical hand. Never reason from the selector name; reason
+  from odd/even and physical hand.
+  (v24 and earlier had this backwards: odd pages bleed RIGHT. Fixed in v25.
+  master-build.py asserts page-1 bleed is on the LEFT and fails the build
+  if it ever regresses.)
+  ============================================================================
+
+  Bleed is ASYMMETRIC per Blurb spec: 0.125" on top, bottom, and the outside
+  edge only — none on the binding edge. WeasyPrint produces this natively via
+  the per-side `bleed-*` properties + `@page :left/:right` selectors.
+
+  `:right` (odd / LEFT-hand):  binding = RIGHT → bleed top/left/bottom
+  `:left`  (even / RIGHT-hand): binding = LEFT  → bleed top/right/bottom
+
+  `!important` on size/bleed is intentional: some spreads declare their own
+  `@page p1 { size: ...; bleed: ...; }` rules. Named @page selectors have
+  higher specificity than parity (:left/:right), so without !important a
+  spread's `bleed: 0.125in` shorthand would clobber the asymmetric per-side
+  values and produce 8.25"-wide pages (symmetric bleed). !important keeps the
+  Blurb-spec geometry locked while still letting spreads override colors.
+
+  Safe margins from trim: inner 0.5", outer 0.5", top 0.25", bottom 0.25"
+  CSS thresholds from .page div edge. CRITICAL: the .page div is 8.25" wide with
+  margin:-0.125", so it overhangs trim by 0.125" on ALL FOUR sides — INCLUDING the
+  binding (which has no bleed; WeasyPrint just clips the overhang). So EVERY inset
+  measured from the div edge is 0.125" closer to trim than its nominal value. To
+  clear 0.5" from trim you need 0.625" from the div edge on EVERY side, binding
+  included:
+    Binding: 0.625" from div edge  |  Outside: 0.625" from div edge  |  Top/bottom: 0.375" from div edge
+  (Earlier versions said "Binding: 0.5" from div edge" — WRONG by one bleed-width;
+  it landed binding content at only 0.375" from the fold. Fixed 2026-05-21.)
+  Live content area: 7.0" wide (8.25 - 0.625 binding - 0.625 outside)  |  Element bottom ≤ 9.875in
+  Rotated elements: a rotation swings corners outward past the nominal inset, so add
+  ~0.05-0.1" extra (rotated photo cards typically need 0.7" from div edge to clear 0.5").
+*/
+
+@page :right {                       /* odd / LEFT-hand page — binding on RIGHT */
+  size: 8.0in 10.0in !important;
+  bleed-top:    0.125in !important;
+  bleed-right:  0       !important;  /* binding edge */
+  bleed-bottom: 0.125in !important;
+  bleed-left:   0.125in !important;  /* outside edge */
+  margin: 0;
+  marks: none;
+}
+
+@page :left {                        /* even / RIGHT-hand page — binding on LEFT */
+  size: 8.0in 10.0in !important;
+  bleed-top:    0.125in !important;
+  bleed-right:  0.125in !important;  /* outside edge */
+  bleed-bottom: 0.125in !important;
+  bleed-left:   0       !important;  /* binding edge */
+  margin: 0;
+  marks: none;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 8.25in;
+  height: 10.25in;
+  counter-reset: page-num;
+}
+
+/*
+  .page is sized to 8.25×10.25" with `margin: -0.125in` so it extends into all
+  four bleed regions — but WeasyPrint clips it at the actual page canvas edge,
+  which is asymmetric per the @page :left/:right rules above. So the binding
+  edge gets no bleed even though the .page div technically extends there.
+*/
+.page {
+  width: 8.25in;
+  height: 10.25in;
+  margin: -0.125in;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  counter-increment: page-num;
+}
+
+.page-number::after {
+  content: counter(page-num);
+}
+
+.page-number.no-number::after {
+  display: none;
+}
+
+/* Safe area inset — content inside this is guaranteed to survive trimming.
+   Symmetric version uses outer threshold (0.625in) on all sides — conservative. */
+.safe {
+  position: absolute;
+  top: 0.375in;
+  left: 0.625in;
+  right: 0.625in;
+  bottom: 0.375in;
+}
+
+/* Hand-specific safe zones. Named by the PHYSICAL HAND the page is on (what you
+   see with the book open):
+     .safe-left  = LEFT-hand page  = ODD  pages (binding on RIGHT).
+     .safe-right = RIGHT-hand page = EVEN pages (binding on LEFT).
+   The .page div overhangs trim by 0.125in on ALL FOUR sides — INCLUDING the
+   binding (WeasyPrint clips the overhang, but CSS coordinates still start at the
+   overhanging edge). So to clear 0.5" from trim you need 0.625in from the div
+   edge on the binding too, NOT 0.5in. (0.5in here lands content 0.375" from the
+   fold and fails master-build.py's safe-margin check.) These are identical to
+   .safe today; they exist so you can loosen the OUTER edge per-hand if a design
+   needs it, while keeping the binding correct. */
+.safe-left {
+  position: absolute;
+  top: 0.375in;
+  left: 0.625in;   /* outer edge */
+  right: 0.625in;  /* binding edge */
+  bottom: 0.375in;
+}
+
+.safe-right {
+  position: absolute;
+  top: 0.375in;
+  left: 0.625in;   /* binding edge */
+  right: 0.625in;  /* outer edge */
+  bottom: 0.375in;
+}
+
