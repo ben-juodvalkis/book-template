@@ -64,4 +64,6 @@ docs/               # ADR + Acrobat checklist
 ```
 
 See **CLAUDE.md** for the full pipeline reference, the canonical page-orientation
-rules, and the non-negotiable print rules.
+rules, and the non-negotiable print rules. See **docs/DESIGN-LANGUAGE.md** for the
+visual identity and copy-paste recipes (photo cards with jagged edges and
+rotation, color blocks, display type, collage layouts).

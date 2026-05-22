@@ -37,15 +37,27 @@
   <span class="page-number left on-dark"></span>
 </div>
 
-<!-- ── Page 2 (RIGHT-hand) ── -->
-<div class="page" style="
-  page: p2;
-  background-color: #1a1a1a;
-  background-image: url('assets/placeholder.svg');
-  background-size: cover;
-  background-position: center center;
-">
-  <div class="safe-right">
+<!-- ── Page 2 (RIGHT-hand) — photo-card collage on a color field ──
+     Demonstrates the .photo-card classes from design.css. See
+     docs/DESIGN-LANGUAGE.md for the full recipe set. -->
+<div class="page" style="page: p2; background-color: var(--accent-2);">
+
+  <!-- Jagged colored-border card (the classic), with a caption strip -->
+  <div class="photo-card jagged" style="
+    top:0.7in; left:0.7in; width:3.2in; height:4.2in;
+    background:var(--accent-1); transform:rotate(-3deg); z-index:4;">
+    <div class="photo-card-inner" style="bottom:0.6in;">
+      <img src="assets/placeholder.svg" alt="">
+    </div>
+    <div class="caption">a jagged photo card</div>
   </div>
+
+  <!-- Film-still card (tight black border, no jagged edge) -->
+  <div class="photo-card film" style="
+    top:5.2in; right:0.7in; width:3.2in; height:3.2in;
+    transform:rotate(2deg); z-index:5;">
+    <div class="photo-card-inner"><img src="assets/placeholder.svg" alt=""></div>
+  </div>
+
   <span class="page-number right on-dark"></span>
 </div>

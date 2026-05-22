@@ -76,6 +76,67 @@ body {
   display: block;
 }
 
+/* ── Photo cards — the signature collage element ────────────────────────────
+   A photo card is a two-layer structure: a COLORED OUTER div (the visible
+   "border"/mount) wrapping an INNER div (clipped to the photo). Position and
+   rotate the outer div inline per instance. See DESIGN-LANGUAGE.md for the full
+   recipe set (jagged edges, film-still borders, gradient-fade collage cards).
+
+   Usage:
+     <div class="photo-card" style="top:1in; left:1in; width:3.5in; height:3.5in;
+                                    transform:rotate(-3deg); background:var(--accent-1);">
+       <div class="photo-card-inner"><img src="assets/x.jpg" alt=""></div>
+     </div>
+
+   IMPORTANT for rotated cards: a rotation swings the corners outward, so keep
+   the card ~0.7in from the .page div edge (not the usual 0.625in) to clear the
+   0.5"-from-trim safe margin. master-build.py's safe-margin check will flag it
+   if a corner crosses the line. */
+.photo-card {
+  position: absolute;
+  background: #000000;          /* the mount color — override inline */
+  transform-origin: center center;
+}
+.photo-card-inner {
+  position: absolute;
+  top: 0.18in; left: 0.18in; right: 0.18in; bottom: 0.18in;  /* border thickness */
+  overflow: hidden;
+}
+.photo-card-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;            /* crop to fill; use object-fit:contain to letterbox */
+  object-position: center;
+  display: block;
+}
+
+/* Thin film-still border (tight black mount, no jagged edge). */
+.photo-card.film .photo-card-inner {
+  top: 0.07in; left: 0.07in; right: 0.07in; bottom: 0.07in;
+}
+
+/* Jagged/torn edge. Apply to .photo-card (outer) and optionally to
+   .photo-card-inner with a different polygon for a double-clipped frame.
+   The 1–2% corner offsets read as a hand-cut edge, not a severe zigzag. */
+.photo-card.jagged {
+  clip-path: polygon(2% 0%, 100% 1%, 98% 100%, 0% 98%);
+}
+.photo-card.jagged .photo-card-inner {
+  clip-path: polygon(0% 8%, 90% 0%, 100% 88%, 6% 100%);
+}
+
+/* Italic caption strip anchored to the bottom of a card (inside the mount). */
+.photo-card .caption {
+  position: absolute;
+  bottom: 0.1in; left: 0.18in; right: 0.18in;
+  font-family: 'Work Sans', Helvetica, Arial, sans-serif;
+  font-size: 11pt;
+  font-style: italic;
+  color: #ffffff;
+  text-align: center;
+  line-height: 1.3;
+}
+
 /* ── Page number ──────────────────────────────────────────────────────────
    The counter is wired up in print.css (.page-number::after). This styles it. */
 .page-number {

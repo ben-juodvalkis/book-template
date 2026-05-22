@@ -154,5 +154,6 @@ viewport units.
 | `src/styles/design.css` | Palette + typography + layout components (customize per book) |
 | `src/master-header.html` / `src/master-footer.html` | HTML head/body wrappers |
 | `printer-specs/` | Drop your printer's ICC profile here (gitignored) |
+| `docs/DESIGN-LANGUAGE.md` | Visual identity + copy-paste recipes (photo cards, color, type, layout) |
 | `docs/ACROBAT-CHECKLIST.md` | Acrobat preflight → press-ready PDF/X-4 |
 | `docs/adr/` | Architecture decision records |
