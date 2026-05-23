@@ -104,23 +104,24 @@ Shared rendering logic lives in `scripts/_build.py`.
 ## How the Build Works — Page Size & Bleed
 
 > **CANONICAL ORIENTATION (do not paraphrase):**
-> Page 1 is a LEFT-hand page. **Odd pages = LEFT-hand (binding on RIGHT, bleed on
-> LEFT). Even pages = RIGHT-hand (binding on LEFT, bleed on RIGHT).** WeasyPrint
-> assigns the first physical page of every render to the CSS `:right` selector, so
-> in this project **`@page :right` styles an ODD / LEFT-hand page** and
-> **`@page :left` styles an EVEN / RIGHT-hand page** — the selector NAME is the
-> OPPOSITE of the physical hand. Never reason from the selector name; reason from
-> odd/even and physical hand.
+> Page 1 is a RIGHT-hand page — the first interior page of a bound book is always
+> a right-hand recto. **Odd pages = RIGHT-hand (binding on LEFT, bleed on
+> RIGHT/outside). Even pages = LEFT-hand (binding on RIGHT, bleed on LEFT/outside).**
+> WeasyPrint assigns the first physical page of every render to the CSS `:right`
+> selector, so in this project **`@page :right` styles an ODD / RIGHT-hand page**
+> and **`@page :left` styles an EVEN / LEFT-hand page** — here the selector name
+> matches the physical hand. Reason from odd/even + physical hand, and remember
+> **bleed always goes on the OUTSIDE edge.**
 
 `print.css` declares asymmetric bleed via per-side properties on `:left`/`:right`
 page selectors. After merge, `master-build.py` runs two guards: `assert_bleed_parity()`
-FAILS the build if page 1 isn't bleeding LEFT (and page 2 RIGHT), and
+FAILS the build if page 1 isn't bleeding RIGHT (and page 2 LEFT), and
 `assert_safe_margins()` measures rendered text ink against the trim box and reports
 anything crossing the binding/outside safe zone (real FOLD/OUTSIDE violations print
 as errors; near-edge TOP/BOTTOM hits print as warnings, since big display titles
 report phantom font-box bounds). Trust the parity guard absolutely.
 
-When a spread starts on an even / RIGHT-hand page, the build injects a CSS swap
+When a spread starts on an even / LEFT-hand page, the build injects a CSS swap
 of `:left`/`:right` bleed so WeasyPrint's physical-page alternation lands the
 bleed on the correct (outside) side.
 
@@ -128,6 +129,36 @@ The `.page` div is sized 8.25×10.25" with `margin: -0.125in` so it extends into
 all four bleed regions; WeasyPrint clips it at the asymmetric page edge, so the
 binding gets no bleed. This is what lets `background-color`/`background-image` on
 `.page` reach the outside bleed.
+
+---
+
+## Front matter & page numbering
+
+By default every page prints its physical position as the folio, numbering from 1.
+Many books instead want **unnumbered front matter** (opening page, blank, title,
+contents) with **arabic numbers restarting at 1 on the first body page**. Set that
+up with `book.config`:
+
+```
+front_matter_pages = 5
+```
+
+This shifts the *displayed* folio by N (displayed = physical − N), so the body's
+first page prints "1". It does NOT suppress the folio by itself — you must also:
+
+1. Put `.no-number` on the `.page-number` span of every front-matter page.
+2. Count N correctly: e.g. opening page (1) + blank (1) + title (1) + contents (2)
+   = `front_matter_pages = 5`.
+3. Make any in-book page references (a contents list, photo credits) use the
+   **displayed** body folios, not physical positions.
+
+**Single opening page** (title/logo alone on the right, nothing facing it): because
+page 1 is a RIGHT-hand recto, make the title page 1 and follow it with a blank
+(page 2, a LEFT-hand verso). Use `src/spreads/_blank.html`. If the title shares a
+file with another page, put the blank `.page` div *inside* that file in the right
+spot — a separate `book.spreads` entry lands after the whole section, not mid-file.
+Remember the total must stay EVEN for saddle stitch; a trailing blank (or a
+full-bleed closing page) absorbs the odd page a leading blank introduces.
 
 ---
 
@@ -188,6 +219,8 @@ viewport units.
 | File | Purpose |
 |---|---|
 | `book.spreads` | **Ordered section list** — the one file you edit to wire up the book |
+| `book.config` | Optional per-book settings (e.g. `front_matter_pages`); see "Front matter & page numbering" |
+| `src/spreads/_blank.html` | Reusable blank page (single-opening-page + even-count padding) |
 | `scripts/master-build.py` | Full-book build (per-section render + merge + parity/margin checks) |
 | `scripts/master-build-trimmed.py` | Trim-cropped 8×10 preview + shareable draft (review only) |
 | `scripts/master-build-draft.py` | Rasterize any build PDF → small shareable draft |

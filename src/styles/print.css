@@ -4,15 +4,16 @@
 
   ============================================================================
   CANONICAL ORIENTATION (do not paraphrase):
-  Page 1 is a LEFT-hand page. Odd pages = LEFT-hand (binding on RIGHT, bleed on
-  LEFT). Even pages = RIGHT-hand (binding on LEFT, bleed on RIGHT). WeasyPrint
-  assigns the first physical page of every render to the CSS `:right` selector,
-  so in this project `@page :right` styles an ODD / LEFT-hand page and
-  `@page :left` styles an EVEN / RIGHT-hand page — the selector NAME is the
-  OPPOSITE of the physical hand. Never reason from the selector name; reason
-  from odd/even and physical hand.
-  (v24 and earlier had this backwards: odd pages bleed RIGHT. Fixed in v25.
-  master-build.py asserts page-1 bleed is on the LEFT and fails the build
+  Page 1 is a RIGHT-hand page (the first interior page of a bound book is always
+  a right-hand recto — confirmed by Blurb's previewer). Odd pages = RIGHT-hand
+  (binding on LEFT, bleed on RIGHT/outside). Even pages = LEFT-hand (binding on
+  RIGHT, bleed on LEFT/outside). WeasyPrint assigns the first physical page of
+  every render to the CSS `:right` selector, so in this project `@page :right`
+  styles an ODD / RIGHT-hand page and `@page :left` styles an EVEN / LEFT-hand
+  page — here the selector name matches the physical hand. Reason from odd/even +
+  physical hand, and remember bleed always goes on the OUTSIDE edge.
+  (An earlier convention had this backwards — odd = LEFT-hand, bleed on binding.
+  master-build.py asserts page-1 bleed is on the RIGHT and fails the build
   if it ever regresses.)
   ============================================================================
 
@@ -20,8 +21,8 @@
   edge only — none on the binding edge. WeasyPrint produces this natively via
   the per-side `bleed-*` properties + `@page :left/:right` selectors.
 
-  `:right` (odd / LEFT-hand):  binding = RIGHT → bleed top/left/bottom
-  `:left`  (even / RIGHT-hand): binding = LEFT  → bleed top/right/bottom
+  `:right` (odd / RIGHT-hand):  binding = LEFT  → bleed top/right/bottom
+  `:left`  (even / LEFT-hand):  binding = RIGHT → bleed top/left/bottom
 
   `!important` on size/bleed is intentional: some spreads declare their own
   `@page p1 { size: ...; bleed: ...; }` rules. Named @page selectors have
@@ -45,22 +46,22 @@
   ~0.05-0.1" extra (rotated photo cards typically need 0.7" from div edge to clear 0.5").
 */
 
-@page :right {                       /* odd / LEFT-hand page — binding on RIGHT */
-  size: 8.0in 10.0in !important;
-  bleed-top:    0.125in !important;
-  bleed-right:  0       !important;  /* binding edge */
-  bleed-bottom: 0.125in !important;
-  bleed-left:   0.125in !important;  /* outside edge */
-  margin: 0;
-  marks: none;
-}
-
-@page :left {                        /* even / RIGHT-hand page — binding on LEFT */
+@page :right {                       /* odd / RIGHT-hand page — binding on LEFT */
   size: 8.0in 10.0in !important;
   bleed-top:    0.125in !important;
   bleed-right:  0.125in !important;  /* outside edge */
   bleed-bottom: 0.125in !important;
   bleed-left:   0       !important;  /* binding edge */
+  margin: 0;
+  marks: none;
+}
+
+@page :left {                        /* even / LEFT-hand page — binding on RIGHT */
+  size: 8.0in 10.0in !important;
+  bleed-top:    0.125in !important;
+  bleed-right:  0       !important;  /* binding edge */
+  bleed-bottom: 0.125in !important;
+  bleed-left:   0.125in !important;  /* outside edge */
   margin: 0;
   marks: none;
 }
@@ -112,9 +113,9 @@ html, body {
 }
 
 /* Hand-specific safe zones. Named by the PHYSICAL HAND the page is on (what you
-   see with the book open):
-     .safe-left  = LEFT-hand page  = ODD  pages (binding on RIGHT).
-     .safe-right = RIGHT-hand page = EVEN pages (binding on LEFT).
+   see with the book open). Page 1 = RIGHT-hand, so:
+     .safe-left  = LEFT-hand page  = EVEN pages (binding on RIGHT).
+     .safe-right = RIGHT-hand page = ODD  pages (binding on LEFT).
    The .page div overhangs trim by 0.125in on ALL FOUR sides — INCLUDING the
    binding (WeasyPrint clips the overhang, but CSS coordinates still start at the
    overhanging edge). So to clear 0.5" from trim you need 0.625in from the div

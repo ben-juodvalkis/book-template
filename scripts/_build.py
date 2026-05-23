@@ -21,8 +21,49 @@ FOOTER = "src/master-footer.html"
 
 SPREADS_DIR = "src/spreads"
 SPREADS_CONFIG = "book.spreads"
+BOOK_CONFIG = "book.config"
 
 BUILDS_DIR = "builds"
+
+# Defaults for book.config keys. A book overrides these in book.config.
+CONFIG_DEFAULTS = {
+    # Number of leading physical pages that carry NO printed folio (front matter:
+    # opening page, blank, title, contents, etc.). Arabic numbering restarts at 1
+    # on the first body page after them. 0 = number every page from 1 (simple book).
+    "front_matter_pages": 0,
+}
+
+
+def load_config():
+    """Return the book's config dict, merging book.config over CONFIG_DEFAULTS.
+
+    book.config is optional. Format: one `key = value` per line; blank lines and
+    `#` comments ignored. Integer-valued keys are parsed as ints. Unknown keys are
+    kept (forward-compatible) but a warning is printed so typos are visible.
+    """
+    cfg = dict(CONFIG_DEFAULTS)
+    path = os.path.join(PROJECT_ROOT, BOOK_CONFIG)
+    if not os.path.exists(path):
+        return cfg
+    with open(path) as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" not in line:
+                print(f"  {BOOK_CONFIG}: ignoring malformed line (no '='): {line!r}")
+                continue
+            key, val = (s.strip() for s in line.split("=", 1))
+            if key not in CONFIG_DEFAULTS:
+                print(f"  {BOOK_CONFIG}: warning — unknown key {key!r} (kept anyway)")
+            if isinstance(CONFIG_DEFAULTS.get(key), int):
+                try:
+                    val = int(val)
+                except ValueError:
+                    print(f"  {BOOK_CONFIG}: {key} must be an integer, got {val!r}; using default")
+                    val = CONFIG_DEFAULTS[key]
+            cfg[key] = val
+    return cfg
 
 
 def load_spreads():
@@ -126,53 +167,62 @@ def strip_outer_tags(html):
     return html.strip()
 
 
-def per_section_style(first_page_num):
+def per_section_style(first_page_num, front_matter_pages=0):
     """
     Build the per-section <style> block injected before the spread fragment.
 
-    1. counter-reset offsets page numbers so each section's pages display
-       their correct global book position.
+    1. counter-reset sets the displayed folio. By default (front_matter_pages=0)
+       a page's folio equals its physical position, numbering from 1. If the book
+       has unnumbered front matter, set `front_matter_pages` (see book.config):
+       the first N physical pages carry no printed folio and arabic numbering
+       restarts at 1 on the first body page. The displayed folio is then physical
+       position minus N, so the counter-reset value is
+       `first_page_num - 1 - front_matter_pages`. Front-matter pages compute a
+       zero/negative counter (never shown — those pages use `.no-number`), and the
+       first body page lands on 1.
 
-    2. CANONICAL ORIENTATION (do not paraphrase): page 1 is a LEFT-hand page.
-       Odd pages = LEFT-hand (binding RIGHT, bleed LEFT); even pages = RIGHT-hand
-       (binding LEFT, bleed RIGHT). WeasyPrint assigns the first physical page of
-       every render to the CSS `:right` selector, so `@page :right` styles an ODD /
-       LEFT-hand page and `@page :left` styles an EVEN / RIGHT-hand page — the
-       selector NAME is the OPPOSITE of the physical hand.
+    2. CANONICAL ORIENTATION (do not paraphrase): page 1 is a RIGHT-hand page.
+       Odd pages = RIGHT-hand (binding LEFT, bleed RIGHT/outside); even pages =
+       LEFT-hand (binding RIGHT, bleed LEFT/outside). WeasyPrint assigns the first
+       physical page of every render to the CSS `:right` selector, so `@page :right`
+       styles an ODD / RIGHT-hand page and `@page :left` styles an EVEN / LEFT-hand
+       page — here the selector name matches the physical hand.
 
-       When a section starts on an even (RIGHT-hand) page, WeasyPrint's physical
+       When a section starts on an even (LEFT-hand) page, WeasyPrint's physical
        :left/:right alternation is off by one — its first physical page is :right
-       (which our base CSS styles as odd/LEFT-hand) but this section's first page
-       is even/RIGHT-hand. We swap the per-side bleed definitions so the asymmetric
-       bleed lands on the correct (outside) edge for this section's parity.
+       (which our base CSS styles as odd/RIGHT-hand, bleeding RIGHT) but this
+       section's first page is even/LEFT-hand and must bleed LEFT. We swap the
+       per-side bleed definitions so the asymmetric bleed lands on the correct
+       (outside) edge for this section's parity.
 
        (Backgrounds and other @page properties are not swapped — only the
        bleed geometry is parity-dependent.)
     """
-    parts = [f"body {{ counter-reset: page-num {first_page_num - 1}; }}"]
+    parts = [f"body {{ counter-reset: page-num {first_page_num - 1 - front_matter_pages}; }}"]
 
     if first_page_num % 2 == 0:
-        # Section starts on an even / RIGHT-hand page. Mirror of base CSS:
-        # physical :right must now bleed RIGHT (outside for a RIGHT-hand page).
+        # Section starts on an even / LEFT-hand page. Mirror of the base CSS so the
+        # outside edge (LEFT for a left-hand page) bleeds: physical :right bleeds
+        # LEFT, physical :left bleeds RIGHT.
         parts.append("""
 @page :right {
-  bleed-left:   0       !important;
-  bleed-right:  0.125in !important;
-}
-@page :left {
   bleed-left:   0.125in !important;
   bleed-right:  0       !important;
+}
+@page :left {
+  bleed-left:   0       !important;
+  bleed-right:  0.125in !important;
 }
 """)
 
     return "<style>\n" + "\n".join(parts) + "\n</style>"
 
 
-def build_section_html(fragment, first_page_num=1):
+def build_section_html(fragment, first_page_num=1, front_matter_pages=0):
     """Wrap a spread fragment with header + per-section style + footer."""
     header = read(HEADER)
     footer = read(FOOTER)
-    style = per_section_style(first_page_num)
+    style = per_section_style(first_page_num, front_matter_pages)
     fragment = strip_outer_tags(fragment)
     return header + "\n" + style + "\n" + fragment + "\n" + footer
 

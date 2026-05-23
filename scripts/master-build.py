@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-master-build.py — full-book pipeline. Asymmetric bleed orientation
-(odd = LEFT-hand → bleed LEFT) and a 0.5" outside-edge safe margin.
+master-build.py — full-book pipeline. Asymmetric bleed on the OUTSIDE edge
+(page 1 = RIGHT-hand; odd = right-hand → bleed RIGHT, even = left-hand → bleed
+LEFT) and a 0.5" outside-edge safe margin.
 
 The ordered list of sections lives in `book.spreads` (one path per line) — edit
 that to wire up your book. Uses src/styles/print.css and writes to
@@ -30,6 +31,7 @@ from _build import (
     build_paths,
     build_section_html,
     count_page_divs,
+    load_config,
     load_spreads,
     merge_pdfs,
     read,
@@ -41,6 +43,8 @@ PATHS        = build_paths()
 OUT_DIR      = PATHS["dir"]
 SECTIONS_DIR = PATHS["sections_dir"]
 MASTER_PDF   = PATHS["master"]
+CONFIG       = load_config()
+FRONT_MATTER_PAGES = CONFIG["front_matter_pages"]
 
 
 def _load_trimmed_builder():
@@ -56,11 +60,11 @@ def _load_trimmed_builder():
 def assert_bleed_parity(pdf_path):
     """Guard against the recurring odd/even bleed-side bug.
 
-    CANONICAL ORIENTATION: page 1 is a LEFT-hand page → odd pages bleed on the
-    LEFT (binding RIGHT), even pages bleed on the RIGHT (binding LEFT). This is
-    easy to get backwards. This check opens the merged PDF and exits non-zero if
-    page 1 isn't bleeding LEFT (and page 2 RIGHT), so the bug can never silently
-    reach the printer.
+    CANONICAL ORIENTATION: page 1 is a RIGHT-hand page → odd pages bleed on the
+    RIGHT (outside; binding LEFT), even pages bleed on the LEFT (outside; binding
+    RIGHT). This is easy to get backwards. This check opens the merged PDF and
+    exits non-zero if page 1 isn't bleeding RIGHT (and page 2 LEFT), so the bug
+    can never silently reach the printer.
     """
     import pikepdf
 
@@ -74,10 +78,10 @@ def assert_bleed_parity(pdf_path):
     with pikepdf.open(pdf_path) as p:
         p1, p2 = bleed_side(p.pages[0]), bleed_side(p.pages[1])
 
-    if p1 != "L" or p2 != "R":
+    if p1 != "R" or p2 != "L":
         print(f"\n{'='*60}")
         print("  BLEED PARITY CHECK FAILED")
-        print(f"  Expected page 1 bleed LEFT, page 2 bleed RIGHT (odd=LEFT-hand).")
+        print(f"  Expected page 1 bleed RIGHT, page 2 bleed LEFT (odd=RIGHT-hand).")
         print(f"  Got: page 1 = {p1}, page 2 = {p2}.")
         print("  This is the recurring odd/even bleed-side bug. Do NOT send to Blurb.")
         print("  Fix the @page :left/:right bleed values in src/styles/print.css")
@@ -85,7 +89,7 @@ def assert_bleed_parity(pdf_path):
         print(f"{'='*60}")
         sys.exit(1)
 
-    print(f"  Bleed parity OK: page 1 = {p1} (LEFT-hand), page 2 = {p2} (RIGHT-hand).")
+    print(f"  Bleed parity OK: page 1 = {p1} (RIGHT-hand), page 2 = {p2} (LEFT-hand).")
 
 
 def assert_safe_margins(pdf_path, fail_hard=False):
@@ -195,7 +199,8 @@ def main():
         page_count = count_page_divs(fragment)
         first_page = total_pages + 1
 
-        wrapped = build_section_html(fragment, first_page_num=first_page)
+        wrapped = build_section_html(fragment, first_page_num=first_page,
+                                     front_matter_pages=FRONT_MATTER_PAGES)
         html_out = os.path.join(SECTIONS_DIR, f"{name}.html")
         write(html_out, wrapped)
 

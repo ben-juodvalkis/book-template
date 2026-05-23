@@ -18,7 +18,10 @@
   @page p2 { background-color: var(--accent-3); }
 </style>
 
-<!-- ── Page 1 (LEFT-hand) ── -->
+<!-- ── First page of this spread ──
+     Hand depends on the section's position in book.spreads. The .safe-left /
+     .safe-right helpers are symmetric-valued (0.625in all sides) so they clear
+     the binding on either hand; pick by name for clarity. -->
 <div class="page" style="page: p1; background-color: var(--accent-2);">
 
   <!-- a rotated slab of color, overlapping into the layout -->
@@ -39,7 +42,7 @@
   <span class="page-number left on-dark"></span>
 </div>
 
-<!-- ── Page 2 (RIGHT-hand) ── -->
+<!-- ── Second page (facing page) ── -->
 <div class="page" style="page: p2; background-color: var(--accent-3);">
   <div class="safe-right">
     <p class="body">More content on the facing page.</p>

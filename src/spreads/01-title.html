@@ -1,17 +1,23 @@
 <!--
   01-title.html — example title spread (2 pages).
 
-  Page 1 is a LEFT-hand page (binding on the RIGHT, bleed on the LEFT).
-  Page 2 is a RIGHT-hand page (binding on the LEFT, bleed on the RIGHT).
+  Page 1 is a RIGHT-hand page (binding on the LEFT, bleed on the RIGHT).
+  Page 2 is a LEFT-hand page (binding on the RIGHT, bleed on the LEFT).
   See print.css for the canonical orientation + safe-zone rules.
+  (Page 1 is always a right-hand recto — the first interior page of a bound book.)
 
   This stub demonstrates the structure every spread follows:
     - an optional per-spread style block for per-page background colors
     - one page div per physical page
     - content placed inside a safe / safe-left / safe-right wrapper
+      (.safe-right = RIGHT-hand/odd page, .safe-left = LEFT-hand/even page)
 
   Do NOT add size: or bleed: to the @page rules — print.css owns those.
   Per-spread @page background-color IS the intended pattern.
+
+  SINGLE OPENING PAGE: to open with the title ALONE on the right, keep page 1 here
+  as the title and make page 2 a blank (see src/spreads/_blank.html), then set
+  front_matter_pages in book.config so the body's first page prints folio "1".
 -->
 
 <style>
@@ -19,19 +25,19 @@
   @page p2 { background-color: var(--accent-1); }
 </style>
 
-<!-- Page 1 (LEFT-hand) -->
+<!-- Page 1 (RIGHT-hand) -->
 <div class="page" style="page: p1; background-color: var(--paper);">
-  <div class="safe-left" style="top: 1.5in;">
+  <div class="safe-right" style="top: 1.5in;">
     <h1 class="heading-xl">Book<br>Title</h1>
     <p class="heading-sm" style="margin-top: 0.3in;">A subtitle goes here</p>
   </div>
-  <span class="page-number left no-number"></span>
+  <span class="page-number right no-number"></span>
 </div>
 
-<!-- Page 2 (RIGHT-hand) -->
+<!-- Page 2 (LEFT-hand) -->
 <div class="page" style="page: p2; background-color: var(--accent-1);">
-  <div class="safe-right">
+  <div class="safe-left">
     <p class="body" style="color: #ffffff;">Author name</p>
   </div>
-  <span class="page-number right no-number"></span>
+  <span class="page-number left no-number"></span>
 </div>

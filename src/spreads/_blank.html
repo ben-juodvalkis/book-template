@@ -1,0 +1,21 @@
+<!--
+  _blank.html — a single intentional blank page (no folio).
+
+  Two common uses:
+    1. SINGLE OPENING PAGE. To make a title/logo open ALONE on the right (a recto
+       with nothing facing it), the title page must be page 1 and a blank must be
+       page 2. Because page 1 = RIGHT-hand here, list this blank in book.spreads
+       immediately AFTER the opening page. NOTE: if your opening page and title
+       share one file, put the blank page div INSIDE that file between them — a
+       separate book.spreads entry lands after the whole section.
+    2. EVEN-COUNT PADDING. Saddle stitch needs an even page count. If the book is
+       odd, add a blank (often a closing leaf) to make it even.
+
+  Folio is suppressed via `.no-number`. If this page falls within front matter,
+  also count it in book.config `front_matter_pages`.
+-->
+
+<div class="page" style="page: pblank; background-color: var(--paper);">
+  <span class="page-number no-number"></span>
+</div>
+<style>@page pblank { background-color: var(--paper); }</style>

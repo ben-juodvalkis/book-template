@@ -122,37 +122,33 @@ The old pipeline cropped the MediaBox correctly but left a symmetric BleedBox in
 - **Edit every spread to remove redundant `size:`/`bleed:` from its `@page` rules.** Equivalent in correctness but invasive (13+ edits across 21 files) and brittle (a future spread author re-introducing the declaration would silently break Blurb-spec). `!important` in shared CSS achieves the same outcome with one decision in one place.
 - **Move all `.page` bleed extension and background-image handling into `@page` rules.** WeasyPrint propagates `@page { background-color }` and `@page { background-image }` to the bleed area natively, which means the `margin: -0.125in` trick is unnecessary for many spreads. This is a real opportunity for a follow-up cleanup but was deferred because it requires touching each spread individually and visually verifying the result.
 
-## Correction — bleed side was backwards (2026-05-19, fixed in v25)
+## Orientation — settled: page 1 is a RIGHT-hand page
 
-The asymmetric bleed described above was implemented on the **wrong side** in v9
-through v24. The CSS mapped `@page :right` → "recto (odd)" → bleed on the right,
-following the *standard book* convention (odd = recto = right-hand page).
+The bleed side flip-flopped repeatedly in the sibling project this template was
+extracted from, because it was *reasoned about* instead of *verified against a
+physical proof*. The settled, correct answer:
 
-**This project's convention is the opposite:** page 1 is a LEFT-hand page, so
-**odd pages = LEFT-hand (binding RIGHT, bleed LEFT)** and **even pages = RIGHT-hand
-(binding LEFT, bleed RIGHT)**. Confirmed with the developer 2026-05-19. Every build
-v9–v24 therefore put the asymmetric bleed on the binding side instead of the outside
-on every page.
-
-It went undetected because the "Post-merge verification" above only checked that the
-BleedBox was *structurally asymmetric* (no binding-edge bleed) — it never checked
-*which physical side* odd pages land on. The bug also recurred repeatedly in review
-because the codebase mixed two vocabularies: CSS `:right`/"recto" vs. the project's
-"odd = LEFT-hand". The same words meant different things in different files.
+**Page 1 is a RIGHT-hand page.** The first interior page of any bound book is a
+right-hand recto (it sits opposite the inside front cover). This was confirmed by
+uploading a built PDF to Blurb and observing its previewer place page 1 on the
+right — ground truth, not inference. Therefore:
 
 **CANONICAL ORIENTATION (do not paraphrase):**
-Page 1 is a LEFT-hand page. Odd pages = LEFT-hand (binding on RIGHT, bleed on LEFT).
-Even pages = RIGHT-hand (binding on LEFT, bleed on RIGHT). WeasyPrint assigns the
-first physical page of every render to the CSS `:right` selector, so in this project
-`@page :right` styles an ODD / LEFT-hand page and `@page :left` styles an EVEN /
-RIGHT-hand page — the selector NAME is the OPPOSITE of the physical hand. Never reason
-from the selector name; reason from odd/even and physical hand.
+Page 1 is a RIGHT-hand page. **Odd pages = RIGHT-hand (binding on LEFT, bleed on
+RIGHT/outside). Even pages = LEFT-hand (binding on RIGHT, bleed on LEFT/outside).**
+WeasyPrint assigns the first physical page of every render to the CSS `:right`
+selector, so `@page :right` styles an ODD / RIGHT-hand page and `@page :left` styles
+an EVEN / LEFT-hand page — here the selector name matches the physical hand. Bleed
+always goes on the OUTSIDE edge.
 
-**Fix (v25):** swapped the `bleed-left`/`bleed-right` values between `@page :right`
-and `@page :left` in `src-v2/styles-v25/print.css` and the mirror swap in
-`_build_v25.py`. Renamed the unused `.safe-recto`/`.safe-verso` helper classes to
-`.safe-left`/`.safe-right` (keyed to physical hand) to kill the recto/verso ambiguity.
-Added a build-time guard `assert_bleed_parity()` in `master-build-v25.py` that opens
-the merged PDF and fails the build if page 1 isn't bleeding LEFT. v24 and earlier are
-left frozen as-is. No spread content edits were needed — content margins were already
-authored to the correct convention; only the bleed metadata was wrong.
+This is the *standard* book convention. An earlier note here claimed the opposite
+("odd = LEFT-hand, bleed on binding") — that was wrong and has been removed. If you
+ever doubt the orientation, do not re-derive it: upload to the printer and look at
+which side page 1 lands on.
+
+**How it's enforced:** `print.css` sets `:right`→bleed RIGHT, `:left`→bleed LEFT;
+`_build.py`'s even-start swap mirrors that for sections beginning on a left-hand
+page; and `assert_bleed_parity()` in `master-build.py` fails the build unless page 1
+bleeds RIGHT and page 2 bleeds LEFT. The `.safe-left`/`.safe-right` helpers are keyed
+to physical hand (left-hand = even, right-hand = odd). No spread content edits are
+needed when the orientation is correct — only the bleed metadata is parity-dependent.

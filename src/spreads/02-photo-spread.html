@@ -23,7 +23,12 @@
   @page p2 { background-color: #1a1a1a; }
 </style>
 
-<!-- ── Page 1 (LEFT-hand) ── -->
+<!-- ── First page of this spread ──
+     Hand depends on where the section falls in book.spreads (odd position from a
+     recto start = RIGHT-hand; even = LEFT-hand). Pick the matching safe wrapper:
+     .safe-right for a RIGHT-hand page, .safe-left for a LEFT-hand page, or the
+     symmetric .safe if unsure. Full-bleed photos are hand-agnostic; the build's
+     parity check handles the bleed side automatically. -->
 <div class="page" style="
   page: p1;
   background-color: #1a1a1a;
@@ -31,13 +36,13 @@
   background-size: cover;
   background-position: center center;
 ">
-  <div class="safe-left">
+  <div class="safe">
     <!-- caption / title text on top of the photo, if any -->
   </div>
   <span class="page-number left on-dark"></span>
 </div>
 
-<!-- ── Page 2 (RIGHT-hand) — photo-card collage on a color field ──
+<!-- ── Second page — photo-card collage on a color field ──
      Demonstrates the .photo-card classes from design.css. See
      docs/DESIGN-LANGUAGE.md for the full recipe set. -->
 <div class="page" style="page: p2; background-color: var(--accent-2);">
