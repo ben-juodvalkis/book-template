@@ -12,6 +12,37 @@ merged with pikepdf into a Blurb-spec PDF. Read this before touching anything.
 
 ---
 
+## Collaboration (two-person shared repo)
+
+This private repo is shared by two people; one is non-technical and works with
+git ONLY through you. Follow these protocols exactly. (Full human guide:
+`docs/COLLABORATION.md`.)
+
+**Session start** — when the user says "I'm starting work" (a `git pull` hook
+also runs automatically on session start):
+1. `git status`; if there are uncommitted changes from a prior session, ask
+   whether to commit them BEFORE pulling.
+2. `git pull --no-rebase`. Summarize what changed in plain English, or say
+   "nothing new" if clean.
+3. On a merge conflict: STOP. Explain it simply, propose a resolution that keeps
+   both sides' intent, and wait for explicit confirmation before committing.
+
+**Session end** — when the user says "I'm done for now":
+1. `git status` and `git diff`; summarize the changes in plain English.
+2. Draft an intent-based commit message (the WHY, not the file list); show it.
+3. Ask for confirmation to save + sync. Only on yes: `git add` the changed
+   files, `git commit`, `git push`. Then confirm "everything is synced."
+
+**Always**
+- Never run destructive git (force-push, reset --hard, clean -f, branch -D,
+  rebase). These are also blocked in `.claude/settings.json`; do not try to work
+  around the block.
+- Show what you're about to commit before committing; never commit without a yes.
+- If a pull is not a clean fast-forward/auto-merge, stop and ask.
+- Default to `main`; don't create branches unless explicitly asked.
+
+---
+
 ## The Pipeline
 
 ```
@@ -38,6 +69,8 @@ ls -d /opt/homebrew/Cellar/weasyprint/*/libexec/bin/python3.*
 
 Sanity-check a candidate: `<interp> -c "import weasyprint, pikepdf"`.
 The draft builder also needs `mutool` (`brew install mupdf-tools`) and Pillow.
+The full build's safe-margin check uses `pdftotext` (`brew install poppler`); if
+it's missing the check is skipped with a warning rather than failing the build.
 
 ### Commands
 
@@ -52,9 +85,17 @@ python3 scripts/master-build-trimmed.py                   # trim-cropped 8×10 p
 python3 scripts/master-build-draft.py                     # small shareable rasterized draft
 ```
 
+The single-section/page iteration scripts share these flags: `--first-page N`
+(preview at a real book position so odd/even bleed parity matches the final book —
+defaults to 1), `--out PATH` (override the `.temp/` destination), and `--html-only`
+(write the wrapped HTML, skip the WeasyPrint render). A section/page argument may be
+a bare name (`01-title`), a name with `.html`, or a full path. `master-build-page.py`
+requires `--page N` or `--page N-M` (1-based).
+
 Output lands in `builds/<branch>-<commit>/` — each branch/commit gets its own
-self-labeled folder. `builds/` is gitignored. The trimmed/draft PDFs are for
-screen review only — never submit them to the printer.
+self-labeled folder, with the final/trimmed/draft PDFs at its top level and the
+per-section PDFs and wrapped HTML under `sections/`. `builds/` is gitignored. The
+trimmed/draft PDFs are for screen review only — never submit them to the printer.
 
 Shared rendering logic lives in `scripts/_build.py`.
 
@@ -72,8 +113,12 @@ Shared rendering logic lives in `scripts/_build.py`.
 > odd/even and physical hand.
 
 `print.css` declares asymmetric bleed via per-side properties on `:left`/`:right`
-page selectors. `master-build.py` runs `assert_bleed_parity()` after merge and
-FAILS the build if page 1 isn't bleeding LEFT — trust that guard.
+page selectors. After merge, `master-build.py` runs two guards: `assert_bleed_parity()`
+FAILS the build if page 1 isn't bleeding LEFT (and page 2 RIGHT), and
+`assert_safe_margins()` measures rendered text ink against the trim box and reports
+anything crossing the binding/outside safe zone (real FOLD/OUTSIDE violations print
+as errors; near-edge TOP/BOTTOM hits print as warnings, since big display titles
+report phantom font-box bounds). Trust the parity guard absolutely.
 
 When a spread starts on an even / RIGHT-hand page, the build injects a CSS swap
 of `:left`/`:right` bleed so WeasyPrint's physical-page alternation lands the
