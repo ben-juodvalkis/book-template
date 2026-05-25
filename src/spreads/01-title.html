@@ -1,43 +1,85 @@
 <!--
-  01-title.html — example title spread (2 pages).
+  01-title.html — opening spread: LOGO → BLANK → TITLE (3 pages of front matter).
 
-  Page 1 is a RIGHT-hand page (binding on the LEFT, bleed on the RIGHT).
-  Page 2 is a LEFT-hand page (binding on the RIGHT, bleed on the LEFT).
-  See print.css for the canonical orientation + safe-zone rules.
-  (Page 1 is always a right-hand recto — the first interior page of a bound book.)
+  This is the institutional / academic title-page format (degree statement,
+  signature lines, college + year). The three pages are:
 
-  This stub demonstrates the structure every spread follows:
-    - an optional per-spread style block for per-page background colors
-    - one page div per physical page
-    - content placed inside a safe / safe-left / safe-right wrapper
-      (.safe-right = RIGHT-hand/odd page, .safe-left = LEFT-hand/even page)
+    p1  LOGO   — RIGHT-hand recto. A small centered logo, alone on the page.
+    p2  BLANK  — LEFT-hand verso. The back of the logo leaf, so the logo opens
+                 ALONE on the right and the title page lands on the right facing
+                 the reader. The blank lives INSIDE this file (not a separate
+                 book.spreads entry) so it stays paired with the logo.
+    p3  TITLE  — RIGHT-hand recto. The formal title page.
 
-  Do NOT add size: or bleed: to the @page rules — print.css owns those.
-  Per-spread @page background-color IS the intended pattern.
+  All three are UNNUMBERED front matter. Set front_matter_pages in book.config to
+  the total leading unnumbered count (this spread contributes 3) so arabic folios
+  restart at "1" on the first body page. Each page suppresses its folio with
+  `.no-number`.
 
-  SINGLE OPENING PAGE: to open with the title ALONE on the right, keep page 1 here
-  as the title and make page 2 a blank (see src/spreads/_blank.html), then set
-  front_matter_pages in book.config so the body's first page prints folio "1".
+  Replace the bracketed [PLACEHOLDERS] with your book's details. The geometry,
+  orientation, and safe zones are owned by print.css — do NOT add size:/bleed: to
+  the @page rules here; per-page background-color IS the intended pattern.
 -->
 
 <style>
-  @page p1 { background-color: var(--paper); }
-  @page p2 { background-color: var(--accent-1); }
+  html, body { background-color: var(--paper); }
+  @page p1     { background-color: var(--paper); }
+  @page pblank { background-color: var(--paper); }
+  @page p2     { background-color: var(--paper); }
 </style>
 
-<!-- Page 1 (RIGHT-hand) -->
-<div class="page" style="page: p1; background-color: var(--paper);">
-  <div class="safe-right" style="top: 1.5in;">
-    <h1 class="heading-xl">Book<br>Title</h1>
-    <p class="heading-sm" style="margin-top: 0.3in;">A subtitle goes here</p>
-  </div>
-  <span class="page-number right no-number"></span>
+<!-- ── Page 1 (RIGHT-hand): Logo — centered, alone on a clean page ── -->
+<div class="page" style="page: p1; background-color: var(--paper); margin: -0.125in; width: 8.25in; height: 10.25in;">
+
+  <img
+    src="assets/logo-placeholder.svg"
+    alt="[INSTITUTION LOGO]"
+    style="position: absolute; width: 1.3in; height: 1.3in; top: 4.475in; left: 3.85in; object-fit: contain;"
+  >
+
+  <span class="page-number no-number"></span>
 </div>
 
-<!-- Page 2 (LEFT-hand) -->
-<div class="page" style="page: p2; background-color: var(--accent-1);">
-  <div class="safe-left">
-    <p class="body" style="color: #ffffff;">Author name</p>
+<!-- ── Page 2 (LEFT-hand): Blank — back of the logo leaf. Keeps the logo alone
+       on the right and the title facing it on the right. Unnumbered. ── -->
+<div class="page" style="page: pblank; background-color: var(--paper); margin: -0.125in; width: 8.25in; height: 10.25in;">
+  <span class="page-number no-number"></span>
+</div>
+
+<!-- ── Page 3 (RIGHT-hand): Title — institutional format ── -->
+<div class="page" style="page: p2; background-color: var(--paper); margin: -0.125in; width: 8.25in; height: 10.25in;">
+
+  <div style="position: absolute; top: 1.175in; left: 0.625in; right: 0.625in; text-align: center; font-family: 'Georgia', 'Times New Roman', serif; color: #000000; font-size: 16pt; font-weight: bold; letter-spacing: 0.02em;">[TITLE]</div>
+
+  <div style="position: absolute; top: 1.75in; left: 0.625in; right: 0.625in; text-align: center; font-family: 'Georgia', 'Times New Roman', serif; color: #000000; font-size: 12pt;">By</div>
+
+  <div style="position: absolute; top: 2.35in; left: 0.625in; right: 0.625in; text-align: center; font-family: 'Georgia', 'Times New Roman', serif; color: #000000; font-size: 14pt;">[AUTHOR NAME]</div>
+
+  <div style="position: absolute; top: 3.2in; left: 0.625in; right: 0.625in; text-align: center; font-family: 'Georgia', 'Times New Roman', serif; color: #000000; font-size: 11pt; line-height: 1.7;">
+    [Presented in<br>
+    partial fulfillment of the requirements of<br>
+    the degree of …]
   </div>
-  <span class="page-number left no-number"></span>
+
+  <div style="position: absolute; top: 4.55in; left: 0.625in; right: 0.625in; text-align: center; font-family: 'Georgia', 'Times New Roman', serif; color: #000000; font-size: 11pt;">[Program / Cohort]</div>
+
+  <div style="position: absolute; top: 5.3in; left: 0.625in; right: 0.625in; text-align: center; font-family: 'Georgia', 'Times New Roman', serif; color: #000000; font-size: 11pt; line-height: 1.7;">
+    [Institution]<br>
+    [City, State]<br>
+    [Year]
+  </div>
+
+  <!-- Signature lines — two columns via table -->
+  <table style="position: absolute; top: 8.1in; left: 0.625in; right: 0.625in; width: 6.75in; table-layout: fixed; font-family: 'Georgia', 'Times New Roman', serif; color: #000000; font-size: 10pt; line-height: 1.8; border-collapse: collapse;">
+    <tr>
+      <td style="width: 50%; padding: 0;">[Role 1]: ___________________</td>
+      <td style="width: 50%; padding: 0;">[Role 2]: ______________________</td>
+    </tr>
+    <tr>
+      <td style="padding: 0;">[Name 1]</td>
+      <td style="padding: 0;">[Name 2]</td>
+    </tr>
+  </table>
+
+  <span class="page-number no-number"></span>
 </div>

@@ -11,6 +11,8 @@
 #
 # Replace these stubs with your real sections.
 
+# Opening: LOGO → BLANK → TITLE (3 unnumbered front-matter pages, all in one file).
+# Counted in book.config front_matter_pages = 3.
 src/spreads/01-title.html
 src/spreads/02-photo-spread.html
 src/spreads/03-color-spread.html
