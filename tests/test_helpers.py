@@ -92,3 +92,12 @@ def test_spread_photo_parity_warns_when_halves_on_wrong_hand():
     warns = b.spread_photo_parity_warnings(FRAGMENT, first_page_num=2)
     assert len(warns) == 2
     assert any("verso" in w for w in warns) and any("recto" in w for w in warns)
+
+
+# ── generator chunking (scripts/generate.py) ─────────────────────────────────
+
+def test_gallery_chunks_images_into_pages():
+    import generate
+    assert list(generate.chunk([1, 2, 3, 4, 5], 4)) == [[1, 2, 3, 4], [5]]
+    assert list(generate.chunk([1, 2], 2)) == [[1, 2]]
+    assert list(generate.chunk([], 3)) == []

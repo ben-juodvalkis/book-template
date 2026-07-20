@@ -1,0 +1,26 @@
+# fonts.txt — declare the fonts to self-host for reproducible renders.
+# Run `./book fonts` to fetch/copy them and generate fonts/fonts.css.
+# See docs/FONTS.md for the full workflow.
+#
+# One font per line, pipe-separated:
+#
+#     family | weight | style | source
+#
+#   family  the CSS name you'll use in design.css (e.g. Work Sans)
+#   weight  400, 700, or a range like "100 900"
+#   style   normal or italic
+#   source  an https URL to an OFL/permissively-licensed font file,
+#           OR a local path (relative to the project root, or absolute)
+#
+# Lines starting with # and blank lines are ignored. Only list fonts you have the
+# right to redistribute — Open Font License (OFL) fonts qualify; keep the font's
+# license file alongside it in fonts/.
+#
+# Uncomment and edit for your book (replace the sources with ones you trust):
+#
+# Work Sans | 100 900 | normal | https://your-source/WorkSans-VariableFont.woff2
+# Work Sans | 100 900 | italic | https://your-source/WorkSans-Italic-VariableFont.woff2
+#
+# Or copy in files you already have:
+#
+# Work Sans | 400 | normal | ~/Downloads/WorkSans-Regular.ttf

@@ -62,7 +62,10 @@ bundles all of this for a known-good build on any OS.
 ./book trimmed                    # trim-cropped preview + draft (alias: preview)
 ./book draft                      # small shareable rasterized draft
 ./book cover --pages 120          # perfect-bound cover; spine = pages ÷ paper ppi
+./book generate gallery assets/trip # photo-grid spread pages from a folder of images
 ./book spread-photo assets/raw.jpg  # prep a cross-gutter photo → assets/raw-spread.jpg
+./book fonts                      # self-host fonts (fonts/fonts.txt → fonts/fonts.css)
+./book preview-web 01-title --watch # live browser preview of a section (layout iteration)
 ./book doctor                     # check the toolchain (Python libs + optional tools)
 ./book test                       # run the geometry/helper test suite (needs pytest)
 ```
@@ -178,6 +181,22 @@ correct for every preset (not hardcoded to Blurb's 0.5"/0.25").
 
 ---
 
+## Generating content, fonts & preview
+
+- **`./book generate gallery <dir>`** writes a spread file of photo-grid pages
+  from a folder of images (chunked N-per-page via the `.photo-grid` component in
+  design.css). The output is a normal spread — add it to `book.spreads`. Extend
+  `scripts/generate.py` with more `gen_*` generators (the pattern is one function
+  returning page HTML).
+- **`./book fonts`** self-hosts fonts from `fonts/fonts.txt` into `fonts/fonts.css`
+  for reproducible/offline/CI renders (the default header uses a CDN, which is
+  not reproducible). See `docs/FONTS.md`.
+- **`./book preview-web <section> --watch`** serves a section in a browser for
+  fast layout iteration. A browser is NOT WeasyPrint — always confirm bleed, safe
+  margins, and pagination in a PDF build before shipping.
+
+---
+
 ## Non-Negotiable Print Rules
 
 **Page dimensions (Blurb 8×10 default — set trim/bleed/safe margins in `book.config`)**
@@ -255,6 +274,10 @@ and ADR 0002 (`docs/adr/`).
 | `scripts/master-build-page.py` | Single-page build for iteration |
 | `scripts/spread-photo.py` | Cover-crop a photo to the spread aspect ratio for a cross-gutter image |
 | `scripts/cover.py` | Render a perfect-bound cover; spine width from page count ÷ paper ppi |
+| `scripts/generate.py` | Data-driven spreads (`generate gallery <dir>` → photo-grid pages) |
+| `scripts/fetch-fonts.py` | Self-host fonts (`fonts/fonts.txt` → `fonts/fonts.css`) for reproducible renders |
+| `scripts/preview.py` | Live browser preview of a section (`preview-web`, layout iteration only) |
+| `fonts/` | Self-hosted fonts + manifest (`fonts.txt`) + generated `fonts.css`; see `docs/FONTS.md` |
 | `scripts/_build.py` | Shared rendering primitives + `load_spreads()` + geometry/`load_config()` + presets/aliases + spine/cover math + `builds/<slug>/` scheme |
 | `tests/` | pytest suite for the geometry/spine math and build helpers (`./book test`) |
 | `src/cover/cover.html` / `src/styles/cover.css` | Perfect-bound cover content + layout (standalone; not print.css) |

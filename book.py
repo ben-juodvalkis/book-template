@@ -12,6 +12,9 @@ Commands
   trimmed | preview [--no-draft]      Trim-crop the master to a trim-size preview
   draft [--in P] [--dpi N] [...]      Rasterize a build PDF to a small, emailable draft
   cover --pages N [--stock S] [...]   Render a perfect-bound cover (spine from page count)
+  generate gallery <dir> [opts]       Generate photo-grid spread pages from a folder
+  fonts [--list]                      Self-host fonts from fonts/fonts.txt -> fonts/fonts.css
+  preview-web <section> [--watch]     Serve a section in the browser for fast iteration
   spread-photo <img> [opts]           Crop a photo to the cross-gutter spread ratio
   doctor                              Check the toolchain (Python libs + optional tools)
   test [pytest args]                  Run the geometry/helper test suite (needs pytest)
@@ -46,6 +49,9 @@ COMMANDS = {
     "preview":      "master-build-trimmed.py",   # alias for `trimmed`
     "draft":        "master-build-draft.py",
     "cover":        "cover.py",
+    "generate":     "generate.py",
+    "fonts":        "fetch-fonts.py",
+    "preview-web":  "preview.py",
     "spread-photo": "spread-photo.py",
 }
 
