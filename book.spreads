@@ -16,3 +16,8 @@
 src/spreads/01-title.html
 src/spreads/02-photo-spread.html
 src/spreads/03-color-spread.html
+
+# Cross-gutter photo: ONE image spanning both facing pages. Must start on an even
+# (LEFT-hand/verso) page — here it lands on page 8. Prep the image with
+# scripts/spread-photo.py; see src/spreads/04-spread-photo.html.
+src/spreads/04-spread-photo.html

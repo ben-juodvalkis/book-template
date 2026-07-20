@@ -76,6 +76,26 @@ body {
   display: block;
 }
 
+/* ── Full-spread (cross-gutter) photo ───────────────────────────────────────
+   One photo spanning BOTH facing pages. Put the SAME background image on the two
+   .page divs of a spread and add these classes. The image is sized to the whole
+   flat spread (--spread-w × --spread-h, injected from book.config) and each page
+   is offset to show its half, so the halves meet exactly at the fold — no cutting
+   the image, no hand-tuned offsets.
+
+   Prep the image to the spread's aspect ratio first:
+       python3 scripts/spread-photo.py assets/raw.jpg
+   otherwise background-size stretches it. Put .spread-photo-verso on the LEFT-hand
+   (even) page and .spread-photo-recto on the RIGHT-hand (odd) page facing it. The
+   var() fallbacks are the 8×10 default; the real values come from book.config.
+   See DESIGN-LANGUAGE.md and src/spreads/04-spread-photo.html. */
+.spread-photo {
+  background-repeat: no-repeat;
+  background-size: var(--spread-w, 16.25in) var(--spread-h, 10.25in);
+}
+.spread-photo-verso { background-position: 0 0; }                          /* LEFT-hand / even page */
+.spread-photo-recto { background-position: var(--spread-recto-x, -8in) 0; } /* RIGHT-hand / odd page */
+
 /* ── Photo cards — the signature collage element ────────────────────────────
    A photo card is a two-layer structure: a COLORED OUTER div (the visible
    "border"/mount) wrapping an INNER div (clipped to the photo). Position and
