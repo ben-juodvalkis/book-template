@@ -1,0 +1,39 @@
+<!--
+  cover.html — editable content for a perfect-bound wraparound cover.
+
+  Rendered by `./book cover --pages N` (scripts/cover.py), which computes the
+  spine width from the page count and paper stock and sizes the sheet. Layout and
+  geometry live in src/styles/cover.css; edit the CONTENT here (title, blurb,
+  spine text, colors). Set a background with `background:` on `.cover` or a panel.
+
+  Panels, left -> right on the flat sheet: BACK COVER | SPINE | FRONT COVER.
+-->
+
+<div class="cover" style="background: var(--paper, #ffffff);">
+
+  <!-- BACK COVER (left panel; outside edge is on the LEFT) -->
+  <div class="cover-back">
+    <div class="cover-safe">
+      <p class="back-blurb">
+        Back-cover copy goes here — a short description of the book, a pull quote,
+        or an author bio. Keep every important word inside this safe box so nothing
+        is lost to the trim.
+      </p>
+      <div class="back-barcode">ISBN&nbsp;/&nbsp;barcode<br>area</div>
+    </div>
+  </div>
+
+  <!-- SPINE (center; width = page count ÷ paper PPI) -->
+  <div class="cover-spine">
+    <span class="spine-title">BOOK TITLE&nbsp;&nbsp;·&nbsp;&nbsp;AUTHOR</span>
+  </div>
+
+  <!-- FRONT COVER (right panel; outside edge is on the RIGHT) -->
+  <div class="cover-front">
+    <div class="cover-safe">
+      <h1 class="front-title">Book&nbsp;Title</h1>
+      <p class="front-subtitle">A subtitle, or the author's name</p>
+    </div>
+  </div>
+
+</div>

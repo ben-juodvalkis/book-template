@@ -13,41 +13,10 @@ merged with pikepdf into a Blurb-spec PDF. Read this before touching anything.
 
 ---
 
-## Collaboration (two-person shared repo)
-
-This private repo is shared by two people; one is non-technical and works with
-git ONLY through you. Follow these protocols exactly. (Full human guide:
-`docs/COLLABORATION.md`.)
-
-**Session start** — when the user says "I'm starting work" (a `git pull` hook
-also runs automatically on session start):
-1. `git status`; if there are uncommitted changes from a prior session, ask
-   whether to commit them BEFORE pulling.
-2. `git pull --no-rebase`. Summarize what changed in plain English, or say
-   "nothing new" if clean.
-3. On a merge conflict: STOP. Explain it simply, propose a resolution that keeps
-   both sides' intent, and wait for explicit confirmation before committing.
-
-**Session end** — when the user says "I'm done for now":
-1. `git status` and `git diff`; summarize the changes in plain English.
-2. Draft an intent-based commit message (the WHY, not the file list); show it.
-3. Ask for confirmation to save + sync. Only on yes: `git add` the changed
-   files, `git commit`, `git push`. Then confirm "everything is synced."
-
-**Always**
-- Never run destructive git (force-push, reset --hard, clean -f, branch -D,
-  rebase). These are also blocked in `.claude/settings.json`; do not try to work
-  around the block.
-- Show what you're about to commit before committing; never commit without a yes.
-- If a pull is not a clean fast-forward/auto-merge, stop and ask.
-- Default to `main`; don't create branches unless explicitly asked.
-
----
-
 ## The Pipeline
 
 ```
-src/spreads/*.html  →  python3 scripts/master-build.py  →  builds/<branch>-<commit>/master-<branch>-<commit>.pdf  →  printer
+src/spreads/*.html  →  ./book build  →  builds/<branch>-<commit>/master-<branch>-<commit>.pdf  →  printer
 ```
 
 The build renders each spread to its own PDF via WeasyPrint, then merges them
@@ -60,38 +29,57 @@ crop — WeasyPrint produces the bleed page size natively via per-side bleed in
 (one spread path per line, in page order; `#` comments and blank lines ignored).
 The scripts read it via `_build.load_spreads()` — you never edit a Python list.
 
-**Toolchain** — WeasyPrint (Homebrew formula) ships its own virtualenv that has
-both `weasyprint` and `pikepdf`. The build scripts `import weasyprint` directly,
-so run them with that interpreter, not a plain `python3`. Find it with:
+**Toolchain** — the build needs Python 3 with `weasyprint`, `pikepdf`, and
+`Pillow`, plus WeasyPrint's own system libraries (Pango et al., which pip can't
+install). The recommended, cross-platform setup is a virtualenv:
 
 ```
-ls -d /opt/homebrew/Cellar/weasyprint/*/libexec/bin/python3.* 
+python3 -m venv .venv
+. .venv/bin/activate                 # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-Sanity-check a candidate: `<interp> -c "import weasyprint, pikepdf"`.
-The draft builder also needs `mutool` (`brew install mupdf-tools`) and Pillow.
-The full build's safe-margin check uses `pdftotext` (`brew install poppler`); if
-it's missing the check is skipped with a warning rather than failing the build.
+Then drive everything through the `./book` CLI (below); it auto-selects `.venv`
+even when the venv isn't activated, and `./book doctor` verifies the toolchain.
+On macOS the Homebrew WeasyPrint formula still works — point the CLI at its
+interpreter via `BOOK_PYTHON`:
+`BOOK_PYTHON="$(ls -d /opt/homebrew/Cellar/weasyprint/*/libexec/bin/python3.*)" ./book build`.
+The shareable-draft builder also needs `mutool` (`brew install mupdf-tools` /
+`apt install mupdf-tools`). The full build's safe-margin check uses `pdftotext`
+(`brew install poppler` / `apt install poppler-utils`); if it's missing the check
+is skipped with a warning rather than failing the build. The included `Dockerfile`
+bundles all of this for a known-good build on any OS.
 
 ### Commands
 
 ```
-python3 scripts/master-build.py             # render all sections + merge → builds/<slug>/
-python3 scripts/master-build.py --no-trim   # master PDF only (skip trimmed + draft)
-python3 scripts/master-build.py --html-only # write per-section wrapped HTML, skip render
+./book init                  # turn the demo into a fresh book (run once after cloning)
+./book build                 # render all sections + merge → builds/<slug>/
+./book build --no-trim       # master PDF only (skip trimmed + draft)
+./book build --html-only     # write per-section wrapped HTML, skip render
 
-python3 scripts/master-build-section.py 01-title          # one section → .temp/
-python3 scripts/master-build-page.py    01-title --page 2 # one page (or 2-4) → .temp/
-python3 scripts/master-build-trimmed.py                   # trim-cropped 8×10 preview + draft
-python3 scripts/master-build-draft.py                     # small shareable rasterized draft
-python3 scripts/spread-photo.py assets/raw.jpg            # prep a cross-gutter photo → assets/raw-spread.jpg
+./book section 01-title           # one section → .temp/
+./book page    01-title --page 2  # one page (or 2-4) → .temp/
+./book trimmed                    # trim-cropped preview + draft (alias: preview)
+./book draft                      # small shareable rasterized draft
+./book cover --pages 120          # perfect-bound cover; spine = pages ÷ paper ppi
+./book generate gallery assets/trip # photo-grid spread pages from a folder of images
+./book spread-photo assets/raw.jpg  # prep a cross-gutter photo → assets/raw-spread.jpg
+./book fonts                      # self-host fonts (fonts/fonts.txt → fonts/fonts.css)
+./book preview-web 01-title --watch # live browser preview of a section (layout iteration)
+./book doctor                     # check the toolchain (Python libs + optional tools)
+./book test                       # run the geometry/helper test suite (needs pytest)
 ```
 
-The single-section/page iteration scripts share these flags: `--first-page N`
+`./book <cmd>` just forwards to the matching `scripts/master-*.py` with the right
+interpreter; run those directly (`python scripts/master-build.py`) if you prefer.
+Windows users without a POSIX shell can use `book.cmd <cmd>` or `python book.py <cmd>`.
+
+The single-section/page iteration commands share these flags: `--first-page N`
 (preview at a real book position so odd/even bleed parity matches the final book —
 defaults to 1), `--out PATH` (override the `.temp/` destination), and `--html-only`
 (write the wrapped HTML, skip the WeasyPrint render). A section/page argument may be
-a bare name (`01-title`), a name with `.html`, or a full path. `master-build-page.py`
+a bare name (`01-title`), a name with `.html`, or a full path. `./book page`
 requires `--page N` or `--page N-M` (1-based).
 
 Output lands in `builds/<branch>-<commit>/` — each branch/commit gets its own
@@ -171,6 +159,45 @@ full-bleed closing page) absorbs the odd page a leading blank introduces.
 
 ---
 
+## Binding, page sizes & covers
+
+`book.config` picks a `page_size` preset and a `binding_type`. Presets cover
+saddle-stitch photo books (`blurb-*`, `us-letter`) and perfect-bound trade sizes
+(`trade-6x9`, `trade-5.5x8.5`, …); service-named aliases (`kdp-6x9`,
+`ingramspark-6x9`, `lulu-6x9`, …) resolve to the same geometry. Binding is
+inherited from the preset unless set explicitly, and drives two things:
+
+- **Page-count check** — saddle-stitch wants multiples of 4 (the build warns on
+  odd; imposition detail noted in `book.config`); perfect-bound needs an even
+  count and a binding safe margin that grows with thickness.
+- **Cover/spine** — `./book cover --pages N` renders a perfect-bound wraparound
+  cover (back + spine + front) as one flat sheet. Spine width = `page_count ÷
+  paper_ppi` (name a `paper_stock` or pass `--ppi`). Geometry is computed in
+  `_build.cover_geometry`; layout is `src/styles/cover.css`, content is
+  `src/cover/cover.html`. The cover render is symmetric-bleed and standalone — it
+  does NOT use `print.css`.
+
+The safe-margin guard reads its thresholds from the resolved geometry, so it's
+correct for every preset (not hardcoded to Blurb's 0.5"/0.25").
+
+---
+
+## Generating content, fonts & preview
+
+- **`./book generate gallery <dir>`** writes a spread file of photo-grid pages
+  from a folder of images (chunked N-per-page via the `.photo-grid` component in
+  design.css). The output is a normal spread — add it to `book.spreads`. Extend
+  `scripts/generate.py` with more `gen_*` generators (the pattern is one function
+  returning page HTML).
+- **`./book fonts`** self-hosts fonts from `fonts/fonts.txt` into `fonts/fonts.css`
+  for reproducible/offline/CI renders (the default header uses a CDN, which is
+  not reproducible). See `docs/FONTS.md`.
+- **`./book preview-web <section> --watch`** serves a section in a browser for
+  fast layout iteration. A browser is NOT WeasyPrint — always confirm bleed, safe
+  margins, and pagination in a PDF build before shipping.
+
+---
+
 ## Non-Negotiable Print Rules
 
 **Page dimensions (Blurb 8×10 default — set trim/bleed/safe margins in `book.config`)**
@@ -209,11 +236,11 @@ viewport units.
    `03-color-spread.html` for solid-color collage pages) to `NN-name.html`.
 2. Fill in content inside the `.safe*` wrappers.
 3. Add the path to `book.spreads` in the right position.
-4. `python3 scripts/master-build-section.py NN-name` to preview, then a full build.
+4. `./book section NN-name` to preview, then a full build (`./book build`).
 5. Keep the total page count EVEN for saddle-stitch (the build warns if it's odd).
 
 For a **full-spread (cross-gutter) photo** — one image across both facing pages —
-copy `04-spread-photo.html`, prep the image with `python3 scripts/spread-photo.py
+copy `04-spread-photo.html`, prep the image with `./book spread-photo
 assets/your.jpg` (fills without stretching; `--focus`/`--zoom` control the crop), and
 point both pages at the output. The section must start on an even page (verso); the
 build warns if a spread photo lands on the wrong hand. See `docs/DESIGN-LANGUAGE.md`
@@ -236,6 +263,10 @@ and ADR 0002 (`docs/adr/`).
 |---|---|
 | `book.spreads` | **Ordered section list** — the one file you edit to wire up the book |
 | `book.config` | Per-book settings: **page size / bleed / safe margins** (preset + overrides) and `front_matter_pages`. Single source of truth for geometry |
+| `book` / `book.py` | The CLI you run (`./book build`, `./book doctor`, …); dispatches to the scripts with the right interpreter. `book.cmd` is the Windows shim |
+| `scripts/init.py` | `./book init` — set title/page-size/license and reset `book.spreads` for a fresh book |
+| `requirements.txt` / `requirements-dev.txt` | Pinned build deps (`weasyprint`, `pikepdf`, `Pillow`); dev adds `pytest` |
+| `Dockerfile` | Known-good, cross-platform build environment (also bundles the system libraries and `mutool`/`pdftotext`) |
 | `src/spreads/_blank.html` | Reusable blank page (single-opening-page + even-count padding) |
 | `src/spreads/04-spread-photo.html` | Cross-gutter photo stub — one image across both facing pages |
 | `scripts/master-build.py` | Full-book build (per-section render + merge + parity/margin checks) |
@@ -244,7 +275,14 @@ and ADR 0002 (`docs/adr/`).
 | `scripts/master-build-section.py` | Single-section build for iteration |
 | `scripts/master-build-page.py` | Single-page build for iteration |
 | `scripts/spread-photo.py` | Cover-crop a photo to the spread aspect ratio for a cross-gutter image |
-| `scripts/_build.py` | Shared rendering primitives + `load_spreads()` + geometry/`load_config()` + `builds/<slug>/` scheme |
+| `scripts/cover.py` | Render a perfect-bound cover; spine width from page count ÷ paper ppi |
+| `scripts/generate.py` | Data-driven spreads (`generate gallery <dir>` → photo-grid pages) |
+| `scripts/fetch-fonts.py` | Self-host fonts (`fonts/fonts.txt` → `fonts/fonts.css`) for reproducible renders |
+| `scripts/preview.py` | Live browser preview of a section (`preview-web`, layout iteration only) |
+| `fonts/` | Self-hosted fonts + manifest (`fonts.txt`) + generated `fonts.css`; see `docs/FONTS.md` |
+| `scripts/_build.py` | Shared rendering primitives + `load_spreads()` + geometry/`load_config()` + presets/aliases + spine/cover math + `builds/<slug>/` scheme |
+| `tests/` | pytest suite for the geometry/spine math and build helpers (`./book test`) |
+| `src/cover/cover.html` / `src/styles/cover.css` | Perfect-bound cover content + layout (standalone; not print.css) |
 | `src/spreads/` | Spread source files (start from the stubs) |
 | `src/styles/print.css` | Print geometry rules — @page/bleed/safe zones (values come from `book.config` via injected CSS variables) |
 | `src/styles/design.css` | Palette + typography + layout components (customize per book) |
@@ -253,3 +291,6 @@ and ADR 0002 (`docs/adr/`).
 | `docs/DESIGN-LANGUAGE.md` | Visual identity + copy-paste recipes (photo cards, color, type, layout) |
 | `docs/ACROBAT-CHECKLIST.md` | Acrobat preflight → press-ready PDF/X-4 |
 | `docs/adr/` | Architecture decision records |
+| `docs/recipes/` | Optional add-ons — e.g. two-person collaboration (one person uses git only through Claude) |
+| `.github/workflows/build.yml` | CI: renders the book on every push/PR and runs the bleed-parity + safe-margin guards |
+| `LICENSE` | MIT — covers the template; the book you make with it is entirely yours |

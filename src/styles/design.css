@@ -76,6 +76,22 @@ body {
   display: block;
 }
 
+/* ── Photo grid — auto-generated gallery pages (scripts/generate.py) ─────────
+   A grid of contained photos filling the safe area. `./book generate gallery`
+   emits pages using these; grid-N sets the layout for N photos on that page.
+   Portrait-friendly defaults (fewer columns than rows); restyle freely. */
+.photo-grid {
+  display: grid;
+  gap: 0.18in;
+  width: 100%;
+  height: 100%;
+}
+.photo-grid.grid-1 { grid-template-columns: 1fr;       grid-template-rows: 1fr; }
+.photo-grid.grid-2 { grid-template-columns: 1fr;       grid-template-rows: 1fr 1fr; }
+.photo-grid.grid-3 { grid-template-columns: 1fr;       grid-template-rows: repeat(3, 1fr); }
+.photo-grid.grid-4 { grid-template-columns: 1fr 1fr;   grid-template-rows: 1fr 1fr; }
+.photo-grid.grid-6 { grid-template-columns: 1fr 1fr;   grid-template-rows: repeat(3, 1fr); }
+
 /* ── Full-spread (cross-gutter) photo ───────────────────────────────────────
    One photo spanning BOTH facing pages. Put the SAME background image on the two
    .page divs of a spread and add these classes. The image is sized to the whole
@@ -167,5 +183,6 @@ body {
 }
 .page-number.left   { left: 0.4in; }
 .page-number.right  { right: 0.4in; }
+.page-number.center { left: 0; right: 0; text-align: center; }  /* parity-independent (generated pages) */
 .page-number.on-dark  { color: #ffffff; }
 .page-number.on-light { color: #000000; }

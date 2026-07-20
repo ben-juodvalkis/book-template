@@ -37,6 +37,9 @@
 # Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+.env
 
 # Node (if ever added)
 node_modules/

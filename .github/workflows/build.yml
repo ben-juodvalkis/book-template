@@ -1,0 +1,58 @@
+name: build
+
+# Renders the book on every push and pull request so the print-safety guards run
+# in CI: the bleed-parity guard FAILS the build if page 1 isn't bleeding on the
+# outside edge, and the safe-margin guard reports any text crossing the trim-safe
+# zone. The rendered PDF is uploaded as a downloadable artifact.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # WeasyPrint's runtime system libraries (pip cannot install these), plus
+      # poppler-utils for the safe-margin guard (pdftotext) and a predictable
+      # fallback font so text renders consistently.
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libpango-1.0-0 libpangoft2-1.0-0 poppler-utils fonts-dejavu-core
+
+      - name: Install Python dependencies
+        run: pip install -r requirements-dev.txt   # build deps + pytest
+
+      - name: Check the toolchain
+        run: ./book doctor
+
+      - name: Run the test suite
+        run: ./book test
+
+      # --no-trim skips the raster draft (which needs mutool) but still runs the
+      # full render, the merge, and BOTH print-safety guards.
+      - name: Build the book
+        run: ./book build --no-trim
+
+      # Render a perfect-bound cover too, so the cover/spine path is exercised in CI.
+      - name: Build a sample cover
+        run: ./book cover --pages 120
+
+      - name: Upload the rendered PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: book-pdf
+          path: builds/**/master-*.pdf
+          if-no-files-found: warn
