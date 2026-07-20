@@ -298,6 +298,46 @@ Photo as the page `background-image` (reaches the bleed automatically via the
 </div>
 ```
 
+### Full-spread (cross-gutter) photo
+
+One photo spanning **both** facing pages. Put the *same* image on the two `.page`
+divs and add the `.spread-photo` classes: the image is sized to the whole flat
+spread and each page is offset to show its half, so they meet exactly at the fold —
+no cutting the image, no hand-tuned offsets, and it re-derives automatically if you
+change page size in `book.config`.
+
+First fit the photo to the spread — a **cover** crop to the spread's aspect ratio, so
+it fills without stretching (the tool reads `book.config`, so the ratio is right for
+any page size, and it warns below 300 DPI). `--focus` picks which part to keep;
+`--zoom` crops in tighter (magnify):
+
+```
+python3 scripts/spread-photo.py assets/raw.jpg                    # cover, centered → assets/raw-spread.jpg
+python3 scripts/spread-photo.py assets/raw.jpg --focus left --zoom 1.3
+```
+
+(Dropping a raw `url()` straight onto the classes forces the spread's aspect ratio and
+will *stretch* a mismatched photo — run the tool first so the placed image already
+matches.)
+
+Then place it — `.spread-photo-verso` on the LEFT-hand (even) page,
+`.spread-photo-recto` on the RIGHT-hand (odd) page facing it:
+
+```html
+<div class="page spread-photo spread-photo-verso" style="page:p1;
+     background-image:url('assets/raw-spread.jpg'); background-color:#111;">
+  <span class="page-number left on-dark"></span>
+</div>
+<div class="page spread-photo spread-photo-recto" style="page:p2;
+     background-image:url('assets/raw-spread.jpg'); background-color:#111;">
+  <span class="page-number right on-dark"></span>
+</div>
+```
+
+The section **must start on an even page** (so the verso is a left-hand page);
+`master-build.py` warns if a spread photo lands on the wrong hand. Full stub:
+`src/spreads/04-spread-photo.html`.
+
 ### Scrim for text over photos
 
 Gradient overlay so type stays legible on a busy/dark photo.
@@ -359,6 +399,7 @@ A slightly skewed black bar grounding a title while adding geometric interest.
 | Film-still card | `.photo-card.film`, tight black border, ±1–2° | Documentation grids |
 | Gradient-fade card | borderless img + `linear-gradient` fade to page color | Dark-page collage |
 | Full-bleed photo | `background-image` on `.page` | Hero / title spreads |
+| Full-spread photo | same image both pages + `.spread-photo-verso/-recto` | One photo across the fold |
 | Scrim | `linear-gradient` rgba overlay | Text over photos |
 | Rotated color block | flat colored div, ±2–3° | Title banners, slabs |
 | Tapering headline | per-line decreasing pt | Poetic / emphatic text |

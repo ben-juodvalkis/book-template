@@ -35,6 +35,7 @@ from _build import (
     load_spreads,
     merge_pdfs,
     read,
+    spread_photo_parity_warnings,
     weasyprint_render,
     write,
 )
@@ -206,6 +207,9 @@ def main():
 
         parity = "verso" if first_page % 2 == 0 else "recto"
         print(f"  [{name}] pages {first_page}-{first_page + page_count - 1} ({page_count}, starts on {parity})")
+
+        for warning in spread_photo_parity_warnings(fragment, first_page):
+            print(f"    WARNING: {warning}")
 
         if not html_only:
             pdf_out = os.path.join(SECTIONS_DIR, f"{name}.pdf")

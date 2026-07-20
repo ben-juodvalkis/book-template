@@ -7,8 +7,9 @@ merged with pikepdf into a Blurb-spec PDF. Read this before touching anything.
 > **This is a template.** When starting a real book: set the title and fonts in
 > `src/master-header.html`, the palette in `src/styles/design.css`, replace the
 > stub spreads in `src/spreads/`, and edit `book.spreads` to list your sections
-> in page order. The print geometry in `src/styles/print.css` and the build
-> scripts in `scripts/` should not need changing.
+> in page order. Set the page size (trim, bleed, safe margins) in `book.config`;
+> the geometry rules in `src/styles/print.css` and the build scripts in `scripts/`
+> should not need changing.
 
 ---
 
@@ -83,6 +84,7 @@ python3 scripts/master-build-section.py 01-title          # one section → .tem
 python3 scripts/master-build-page.py    01-title --page 2 # one page (or 2-4) → .temp/
 python3 scripts/master-build-trimmed.py                   # trim-cropped 8×10 preview + draft
 python3 scripts/master-build-draft.py                     # small shareable rasterized draft
+python3 scripts/spread-photo.py assets/raw.jpg            # prep a cross-gutter photo → assets/raw-spread.jpg
 ```
 
 The single-section/page iteration scripts share these flags: `--first-page N`
@@ -112,6 +114,13 @@ Shared rendering logic lives in `scripts/_build.py`.
 > and **`@page :left` styles an EVEN / LEFT-hand page** — here the selector name
 > matches the physical hand. Reason from odd/even + physical hand, and remember
 > **bleed always goes on the OUTSIDE edge.**
+
+**Geometry comes from `book.config`.** Trim size, bleed, and safe margins are set
+there (a `page_size` preset plus optional per-field overrides) and injected into
+every render as CSS custom properties; `print.css` and `design.css` consume them via
+`var()`. The values below are the `blurb-8x10` default — to change size, edit
+`book.config`, not the CSS. `scripts/_build.py` (`geometry()`) is the single place
+the numbers are computed.
 
 `print.css` declares asymmetric bleed via per-side properties on `:left`/`:right`
 page selectors. After merge, `master-build.py` runs two guards: `assert_bleed_parity()`
@@ -164,7 +173,7 @@ full-bleed closing page) absorbs the odd page a leading blank introduces.
 
 ## Non-Negotiable Print Rules
 
-**Page dimensions (example: Blurb 8×10 trim — change in `print.css` if different)**
+**Page dimensions (Blurb 8×10 default — set trim/bleed/safe margins in `book.config`)**
 - Trim: 8.0×10.0" portrait; final PDF page: 8.125×10.25" (bleed)
 - Safe margins from trim: binding 0.5", outside 0.5", top/bottom 0.25"
 - **CSS safe-zone thresholds (measured from the `.page` div edge):** the div
@@ -203,6 +212,13 @@ viewport units.
 4. `python3 scripts/master-build-section.py NN-name` to preview, then a full build.
 5. Keep the total page count EVEN for saddle-stitch (the build warns if it's odd).
 
+For a **full-spread (cross-gutter) photo** — one image across both facing pages —
+copy `04-spread-photo.html`, prep the image with `python3 scripts/spread-photo.py
+assets/your.jpg` (fills without stretching; `--focus`/`--zoom` control the crop), and
+point both pages at the output. The section must start on an even page (verso); the
+build warns if a spread photo lands on the wrong hand. See `docs/DESIGN-LANGUAGE.md`
+and ADR 0002 (`docs/adr/`).
+
 ---
 
 ## File Hygiene
@@ -219,16 +235,18 @@ viewport units.
 | File | Purpose |
 |---|---|
 | `book.spreads` | **Ordered section list** — the one file you edit to wire up the book |
-| `book.config` | Optional per-book settings (e.g. `front_matter_pages`); see "Front matter & page numbering" |
+| `book.config` | Per-book settings: **page size / bleed / safe margins** (preset + overrides) and `front_matter_pages`. Single source of truth for geometry |
 | `src/spreads/_blank.html` | Reusable blank page (single-opening-page + even-count padding) |
+| `src/spreads/04-spread-photo.html` | Cross-gutter photo stub — one image across both facing pages |
 | `scripts/master-build.py` | Full-book build (per-section render + merge + parity/margin checks) |
 | `scripts/master-build-trimmed.py` | Trim-cropped 8×10 preview + shareable draft (review only) |
 | `scripts/master-build-draft.py` | Rasterize any build PDF → small shareable draft |
 | `scripts/master-build-section.py` | Single-section build for iteration |
 | `scripts/master-build-page.py` | Single-page build for iteration |
-| `scripts/_build.py` | Shared rendering primitives + `load_spreads()` + `builds/<slug>/` scheme |
+| `scripts/spread-photo.py` | Cover-crop a photo to the spread aspect ratio for a cross-gutter image |
+| `scripts/_build.py` | Shared rendering primitives + `load_spreads()` + geometry/`load_config()` + `builds/<slug>/` scheme |
 | `src/spreads/` | Spread source files (start from the stubs) |
-| `src/styles/print.css` | Print geometry — page size, asymmetric bleed, safe zones |
+| `src/styles/print.css` | Print geometry rules — @page/bleed/safe zones (values come from `book.config` via injected CSS variables) |
 | `src/styles/design.css` | Palette + typography + layout components (customize per book) |
 | `src/master-header.html` / `src/master-footer.html` | HTML head/body wrappers |
 | `printer-specs/` | Drop your printer's ICC profile here (gitignored) |

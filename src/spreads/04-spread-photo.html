@@ -1,0 +1,59 @@
+<!--
+  04-spread-photo.html — TEMPLATE: ONE photo spanning the whole two-page spread
+  (a cross-gutter / "double-truck" image that crosses the fold).
+
+  HOW IT WORKS: the SAME image is the background of BOTH pages, sized to the whole
+  flat spread; the .spread-photo-verso / -recto classes (design.css) offset each
+  page to show its half, so the halves meet exactly at the fold. No cutting the
+  photo in half, no hand-tuned offsets — and it re-derives automatically if you
+  change page size in book.config (the offset is driven by injected CSS variables).
+
+  STEP 1 — PREP THE IMAGE (cover-crops to the spread's aspect ratio; the tool reads
+  book.config so the ratio is always right for your page size):
+      python3 scripts/spread-photo.py assets/your-photo.jpg --focus center
+  It writes assets/your-photo-spread.jpg. Then, on BOTH pages below, replace the
+  demo `background-image: linear-gradient(...)` with:
+      background-image: url('assets/your-photo-spread.jpg');
+  Aim for a source that yields ≥300 DPI (the tool warns if not).
+
+  STEP 2 — PARITY (important): the verso half must be a LEFT-hand (even) page and
+  the recto half the RIGHT-hand (odd) page facing it, so this section must START on
+  an even page. In the shipped book.spreads it is the 4th section (title 3pp +
+  02 2pp + 03 2pp = 7), so it starts on page 8 (even) ✓. master-build.py prints a
+  WARNING if a spread photo lands on the wrong hand.
+
+  This stub ships with a text-free GRADIENT stand-in (not the shared placeholder,
+  whose label text would read across the fold) so a fresh build renders cleanly and
+  you can see one background span both pages. background-color is the bleed/edge
+  fallback behind the photo.
+
+  Geometry (size/bleed/safe) is owned by print.css + book.config — do NOT add
+  size:/bleed: to the @page rules here; per-page background-color IS the pattern.
+-->
+
+<style>
+  @page p1 { background-color: #14171f; }
+  @page p2 { background-color: #14171f; }
+</style>
+
+<!-- ── Verso — LEFT-hand / even page: shows the LEFT half of the image ── -->
+<div class="page spread-photo spread-photo-verso" style="
+  page: p1;
+  background-color: #14171f;
+  background-image: linear-gradient(90deg, #14171f 0%, #5a3a86 50%, #d99a3c 100%);
+">
+  <!-- Optional caption/title on top of the photo. Keep it inside .safe-left so it
+       clears the binding; on a spread, text usually sits away from the gutter. -->
+  <div class="safe-left"></div>
+  <span class="page-number left on-dark"></span>
+</div>
+
+<!-- ── Recto — RIGHT-hand / odd page: shows the RIGHT half of the SAME image ── -->
+<div class="page spread-photo spread-photo-recto" style="
+  page: p2;
+  background-color: #14171f;
+  background-image: linear-gradient(90deg, #14171f 0%, #5a3a86 50%, #d99a3c 100%);
+">
+  <div class="safe-right"></div>
+  <span class="page-number right on-dark"></span>
+</div>

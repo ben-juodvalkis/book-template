@@ -46,22 +46,29 @@
   ~0.05-0.1" extra (rotated photo cards typically need 0.7" from div edge to clear 0.5").
 */
 
+/*
+  Geometry values below come from CSS custom properties that the build injects
+  from book.config (scripts/_build.py geometry_css_vars) — trim size, bleed, and
+  safe margins are configurable per book via a page_size preset + overrides. The
+  var() fallbacks are the Blurb 8×10 default, so this stylesheet still renders
+  correctly if ever used without the injected block. Edit book.config, not these.
+*/
 @page :right {                       /* odd / RIGHT-hand page — binding on LEFT */
-  size: 8.0in 10.0in !important;
-  bleed-top:    0.125in !important;
-  bleed-right:  0.125in !important;  /* outside edge */
-  bleed-bottom: 0.125in !important;
-  bleed-left:   0       !important;  /* binding edge */
+  size: var(--trim-w, 8in) var(--trim-h, 10in) !important;
+  bleed-top:    var(--bleed, 0.125in) !important;
+  bleed-right:  var(--bleed, 0.125in) !important;  /* outside edge */
+  bleed-bottom: var(--bleed, 0.125in) !important;
+  bleed-left:   0                     !important;  /* binding edge */
   margin: 0;
   marks: none;
 }
 
 @page :left {                        /* even / LEFT-hand page — binding on RIGHT */
-  size: 8.0in 10.0in !important;
-  bleed-top:    0.125in !important;
-  bleed-right:  0       !important;  /* binding edge */
-  bleed-bottom: 0.125in !important;
-  bleed-left:   0.125in !important;  /* outside edge */
+  size: var(--trim-w, 8in) var(--trim-h, 10in) !important;
+  bleed-top:    var(--bleed, 0.125in) !important;
+  bleed-right:  0                     !important;  /* binding edge */
+  bleed-bottom: var(--bleed, 0.125in) !important;
+  bleed-left:   var(--bleed, 0.125in) !important;  /* outside edge */
   margin: 0;
   marks: none;
 }
@@ -73,8 +80,8 @@
 }
 
 html, body {
-  width: 8.25in;
-  height: 10.25in;
+  width: var(--div-w, 8.25in);
+  height: var(--div-h, 10.25in);
   counter-reset: page-num;
 }
 
@@ -85,9 +92,9 @@ html, body {
   edge gets no bleed even though the .page div technically extends there.
 */
 .page {
-  width: 8.25in;
-  height: 10.25in;
-  margin: -0.125in;
+  width: var(--div-w, 8.25in);
+  height: var(--div-h, 10.25in);
+  margin: var(--page-margin, -0.125in);
   position: relative;
   overflow: hidden;
   page-break-after: always;
@@ -106,10 +113,10 @@ html, body {
    Symmetric version uses outer threshold (0.625in) on all sides — conservative. */
 .safe {
   position: absolute;
-  top: 0.375in;
-  left: 0.625in;
-  right: 0.625in;
-  bottom: 0.375in;
+  top: var(--safe-top, 0.375in);
+  left: var(--safe-max, 0.625in);
+  right: var(--safe-max, 0.625in);
+  bottom: var(--safe-bottom, 0.375in);
 }
 
 /* Hand-specific safe zones. Named by the PHYSICAL HAND the page is on (what you
@@ -125,17 +132,17 @@ html, body {
    needs it, while keeping the binding correct. */
 .safe-left {
   position: absolute;
-  top: 0.375in;
-  left: 0.625in;   /* outer edge */
-  right: 0.625in;  /* binding edge */
-  bottom: 0.375in;
+  top: var(--safe-top, 0.375in);
+  left: var(--safe-outside, 0.625in);   /* outer edge */
+  right: var(--safe-binding, 0.625in);  /* binding edge */
+  bottom: var(--safe-bottom, 0.375in);
 }
 
 .safe-right {
   position: absolute;
-  top: 0.375in;
-  left: 0.625in;   /* binding edge */
-  right: 0.625in;  /* outer edge */
-  bottom: 0.375in;
+  top: var(--safe-top, 0.375in);
+  left: var(--safe-binding, 0.625in);   /* binding edge */
+  right: var(--safe-outside, 0.625in);  /* outer edge */
+  bottom: var(--safe-bottom, 0.375in);
 }
 

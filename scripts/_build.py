@@ -25,13 +25,68 @@ BOOK_CONFIG = "book.config"
 
 BUILDS_DIR = "builds"
 
+# ── Page geometry ────────────────────────────────────────────────────────────
+# Built-in page-size presets for saddle-stitch POD (all values in INCHES, except
+# dpi). A book selects one via `page_size = <name>` in book.config and may override
+# any single field (see GEOMETRY_KEYS). These are the SINGLE SOURCE OF TRUTH for
+# print geometry: the build injects them into every render as CSS custom properties
+# (see geometry_css_vars), and print.css / design.css read them via var(). Verify
+# each preset against your printer's current spec sheet before shipping.
+PAGE_SIZE_PRESETS = {
+    "blurb-8x10": {  # Blurb 8×10 portrait — the template default
+        "trim_width": 8.0, "trim_height": 10.0, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.5, "safe_top": 0.25, "safe_bottom": 0.25,
+        "dpi": 300,
+    },
+    "blurb-7x7": {  # Blurb 7×7 square
+        "trim_width": 7.0, "trim_height": 7.0, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.5, "safe_top": 0.25, "safe_bottom": 0.25,
+        "dpi": 300,
+    },
+    "blurb-10x8-landscape": {  # Blurb 10×8 landscape
+        "trim_width": 10.0, "trim_height": 8.0, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.5, "safe_top": 0.25, "safe_bottom": 0.25,
+        "dpi": 300,
+    },
+    "us-letter": {  # 8.5×11 portrait
+        "trim_width": 8.5, "trim_height": 11.0, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.5, "safe_top": 0.25, "safe_bottom": 0.25,
+        "dpi": 300,
+    },
+}
+
+DEFAULT_PAGE_SIZE = "blurb-8x10"
+
+# Geometry fields a book may override individually in book.config. Length fields
+# are in inches (accept `8`, `8in`, or `203mm`); dpi is an integer. Any field left
+# unset inherits from the selected page_size preset.
+GEOMETRY_LENGTH_KEYS = (
+    "trim_width", "trim_height", "bleed",
+    "safe_binding", "safe_outside", "safe_top", "safe_bottom",
+)
+GEOMETRY_KEYS = GEOMETRY_LENGTH_KEYS + ("dpi",)
+
 # Defaults for book.config keys. A book overrides these in book.config.
 CONFIG_DEFAULTS = {
     # Number of leading physical pages that carry NO printed folio (front matter:
     # opening page, blank, title, contents, etc.). Arabic numbering restarts at 1
     # on the first body page after them. 0 = number every page from 1 (simple book).
     "front_matter_pages": 0,
+    # Page-size preset name (see PAGE_SIZE_PRESETS).
+    "page_size": DEFAULT_PAGE_SIZE,
+    # Per-field geometry overrides; None = inherit from the selected preset.
+    **{k: None for k in GEOMETRY_KEYS},
 }
+
+
+def parse_length_in(val):
+    """Parse a length like '8', '8in', '0.125in', or '203mm' → inches (float)."""
+    s = str(val).strip().lower()
+    if s.endswith("mm"):
+        return float(s[:-2].strip()) / 25.4
+    if s.endswith("in"):
+        s = s[:-2].strip()
+    return float(s)
 
 
 def load_config():
@@ -56,14 +111,110 @@ def load_config():
             key, val = (s.strip() for s in line.split("=", 1))
             if key not in CONFIG_DEFAULTS:
                 print(f"  {BOOK_CONFIG}: warning — unknown key {key!r} (kept anyway)")
-            if isinstance(CONFIG_DEFAULTS.get(key), int):
+            if key == "front_matter_pages":
                 try:
                     val = int(val)
                 except ValueError:
                     print(f"  {BOOK_CONFIG}: {key} must be an integer, got {val!r}; using default")
                     val = CONFIG_DEFAULTS[key]
+            elif key == "dpi":
+                try:
+                    val = int(float(val))
+                except ValueError:
+                    print(f"  {BOOK_CONFIG}: dpi must be a number, got {val!r}; ignoring")
+                    val = None
+            elif key in GEOMETRY_LENGTH_KEYS:
+                try:
+                    val = parse_length_in(val)
+                except ValueError:
+                    print(f"  {BOOK_CONFIG}: {key} must be a length (e.g. 8in, 203mm), got {val!r}; ignoring")
+                    val = None
             cfg[key] = val
     return cfg
+
+
+def resolve_geometry(cfg):
+    """Merge the selected page_size preset with any explicit book.config overrides.
+
+    Returns a dict of base geometry values (inches, plus integer dpi). An unknown
+    preset name falls back to DEFAULT_PAGE_SIZE with a warning.
+    """
+    name = cfg.get("page_size") or DEFAULT_PAGE_SIZE
+    if name not in PAGE_SIZE_PRESETS:
+        print(f"  {BOOK_CONFIG}: unknown page_size {name!r}; using {DEFAULT_PAGE_SIZE!r}")
+        name = DEFAULT_PAGE_SIZE
+    base = dict(PAGE_SIZE_PRESETS[name])
+    for k in GEOMETRY_KEYS:
+        if cfg.get(k) is not None:
+            base[k] = cfg[k]
+    return base
+
+
+def geometry(cfg=None):
+    """Full derived print geometry (inches) from book.config — ONE source of truth.
+
+    Everything the CSS and the image tools need is computed here. Derived values:
+      div_w/div_h     the .page div (trim + bleed on all four sides; the binding
+                      overhang is clipped by WeasyPrint, giving no bleed at the fold)
+      page_margin     the negative margin that pushes .page into the bleed
+      page_w/page_h   the final per-side PDF page (trim + outside/top/bottom bleed)
+      css_safe_*      safe insets measured from the .page div EDGE = safe-from-trim
+                      + one bleed (the div overhangs trim by `bleed` on every side)
+      spread_w/h      the full flat two-page spread incl. both outside bleeds
+      spread_recto_x  background-position-x for the right page of a spread photo
+                      (= -trim_width; see the .spread-photo classes in design.css)
+    """
+    cfg = cfg if cfg is not None else load_config()
+    g = resolve_geometry(cfg)
+    tw, th, bl = g["trim_width"], g["trim_height"], g["bleed"]
+    sb, so = g["safe_binding"], g["safe_outside"]
+    st, sbo = g["safe_top"], g["safe_bottom"]
+    d = dict(g)
+    d.update({
+        "div_w": tw + 2 * bl,
+        "div_h": th + 2 * bl,
+        "page_margin": -bl,
+        "page_w": tw + bl,
+        "page_h": th + 2 * bl,
+        "css_safe_binding": sb + bl,
+        "css_safe_outside": so + bl,
+        "css_safe_top": st + bl,
+        "css_safe_bottom": sbo + bl,
+        "css_safe_max": max(sb, so) + bl,
+        "spread_w": 2 * (tw + bl),
+        "spread_h": th + 2 * bl,
+        "spread_recto_x": -tw,
+    })
+    return d
+
+
+def _css_in(x):
+    """Format an inch value as a CSS length, trimming trailing zeros."""
+    s = f"{x:.4f}".rstrip("0").rstrip(".")
+    return (s or "0") + "in"
+
+
+def geometry_css_vars(geom):
+    """The <style> block of :root custom properties injected into every render.
+
+    print.css and design.css consume these via var(). It is injected into <head>
+    so that @page rules (which also use var()) resolve — verified on WeasyPrint 69,
+    which resolves var() inside @page and across separate stylesheets.
+    """
+    v = geom
+    return (
+        "<style>\n"
+        "/* Print geometry — generated from book.config by scripts/_build.py.\n"
+        "   SINGLE SOURCE OF TRUTH: change book.config, never these values. */\n"
+        ":root {\n"
+        f"  --trim-w: {_css_in(v['trim_width'])}; --trim-h: {_css_in(v['trim_height'])}; --bleed: {_css_in(v['bleed'])};\n"
+        f"  --div-w: {_css_in(v['div_w'])}; --div-h: {_css_in(v['div_h'])}; --page-margin: {_css_in(v['page_margin'])};\n"
+        f"  --safe-binding: {_css_in(v['css_safe_binding'])}; --safe-outside: {_css_in(v['css_safe_outside'])};\n"
+        f"  --safe-top: {_css_in(v['css_safe_top'])}; --safe-bottom: {_css_in(v['css_safe_bottom'])}; --safe-max: {_css_in(v['css_safe_max'])};\n"
+        f"  --spread-w: {_css_in(v['spread_w'])}; --spread-h: {_css_in(v['spread_h'])}; --spread-recto-x: {_css_in(v['spread_recto_x'])};\n"
+        "}\n"
+        "</style>"
+    )
 
 
 def load_spreads():
@@ -117,6 +268,11 @@ def build_slug():
 
     branch = git("rev-parse", "--abbrev-ref", "HEAD", default="nogit")
     commit = git("rev-parse", "--short", "HEAD", default="nogit")
+    # Branch names routinely contain '/' (e.g. "claude/foo", "feature/bar").
+    # Left as-is that turns builds/<slug>/master-<slug>.pdf into an unintended
+    # nested path (master-claude/...pdf) whose directory doesn't exist, and the
+    # merge save fails. Flatten separators so the slug is always one path segment.
+    branch = branch.replace("/", "-").replace(os.sep, "-")
     return f"{branch}-{commit}"
 
 
@@ -156,6 +312,31 @@ def write(path, content):
 def count_page_divs(html):
     """Count top-level <div class='page ...'> elements in a spread fragment."""
     return len(re.findall(r'<div[^>]+class="[^"]*\bpage\b[^"]*"', html))
+
+
+def spread_photo_parity_warnings(html, first_page_num):
+    """Warn if a full-spread (cross-gutter) photo half lands on the wrong hand.
+
+    A `.spread-photo-verso` half must be a LEFT-hand (even) page and a
+    `.spread-photo-recto` half a RIGHT-hand (odd) page facing it; otherwise the
+    photo is split across a page TURN instead of a facing spread. Returns a list
+    of human-readable warning strings (empty if all good).
+    """
+    warnings = []
+    classes = re.findall(r'<div[^>]*\bclass="([^"]*\bpage\b[^"]*)"', html)
+    for i, cls in enumerate(classes):
+        gp = first_page_num + i
+        if "spread-photo-verso" in cls and gp % 2 == 1:
+            warnings.append(
+                f"spread-photo-verso on page {gp} (a RIGHT-hand/odd page) — the verso half "
+                f"must be a LEFT-hand/even page, or the photo splits across a page turn."
+            )
+        if "spread-photo-recto" in cls and gp % 2 == 0:
+            warnings.append(
+                f"spread-photo-recto on page {gp} (a LEFT-hand/even page) — the recto half "
+                f"must be a RIGHT-hand/odd page facing its verso."
+            )
+    return warnings
 
 
 def strip_outer_tags(html):
@@ -206,22 +387,35 @@ def per_section_style(first_page_num, front_matter_pages=0):
         # LEFT, physical :left bleeds RIGHT.
         parts.append("""
 @page :right {
-  bleed-left:   0.125in !important;
-  bleed-right:  0       !important;
+  bleed-left:   var(--bleed) !important;
+  bleed-right:  0            !important;
 }
 @page :left {
-  bleed-left:   0       !important;
-  bleed-right:  0.125in !important;
+  bleed-left:   0            !important;
+  bleed-right:  var(--bleed) !important;
 }
 """)
 
     return "<style>\n" + "\n".join(parts) + "\n</style>"
 
 
-def build_section_html(fragment, first_page_num=1, front_matter_pages=0):
-    """Wrap a spread fragment with header + per-section style + footer."""
+def build_section_html(fragment, first_page_num=1, front_matter_pages=0, cfg=None):
+    """Wrap a spread fragment with header + geometry vars + per-section style + footer.
+
+    The geometry custom properties (from book.config) are injected into <head> so
+    print.css/design.css var() references — including inside @page — resolve. cfg
+    is loaded from book.config when not supplied, so the single-section/page build
+    scripts pick up the book's geometry without threading it through.
+    """
+    cfg = cfg if cfg is not None else load_config()
+    geom = geometry(cfg)
     header = read(HEADER)
     footer = read(FOOTER)
+    geo_style = geometry_css_vars(geom)
+    if "</head>" in header:
+        header = header.replace("</head>", geo_style + "\n</head>", 1)
+    else:
+        header = header + "\n" + geo_style
     style = per_section_style(first_page_num, front_matter_pages)
     fragment = strip_outer_tags(fragment)
     return header + "\n" + style + "\n" + fragment + "\n" + footer
