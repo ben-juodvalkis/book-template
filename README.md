@@ -11,6 +11,27 @@ full-bleed photo books — but the pipeline works for any HTML-laid-out book.
 > `git clone` it and start a fresh history. It's MIT-licensed; the book you make
 > with it is entirely yours (see [License](#license)).
 
+## Preview
+
+The sample book that ships in this repo, rendered by the real pipeline — these
+images are rasterized from the WeasyPrint PDF output (cropped to the 8×10" trim,
+the way a bound copy reads), not from a browser.
+
+![Wraparound cover sheet: back-cover copy on the left, spine text in the middle, title and subtitle on the front](docs/images/cover.png)
+
+*The generated cover — back, spine, and front as one flat sheet, spine width
+computed from the page count (`./book cover`).*
+
+![One photo running continuously across both facing pages of a spread](docs/images/spread-gutter.png)
+
+*A cross-gutter spread: a single image continues across the gutter onto both
+facing pages (`./book spread-photo` preps the crop).*
+
+![Contact sheet of the whole sample book laid out as facing-page spreads](docs/images/contact-sheet.png)
+
+*The full 10-page sample as facing-page spreads — placeholder art marks where
+your photos go. More shots in [docs/SHOWCASE.md](docs/SHOWCASE.md).*
+
 ## What you get
 
 - **A per-section render pipeline** that produces a Blurb-spec PDF (8.125×10.25"

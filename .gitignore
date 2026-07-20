@@ -20,6 +20,8 @@
 *.icc
 *.mp4
 *.mov
+# …but DO track the rendered sample-book preview images (README + docs/SHOWCASE.md)
+!docs/images/*.png
 
 # Screenshots and preview temp files
 .screenshots/
