@@ -21,3 +21,7 @@ src/spreads/03-color-spread.html
 # (LEFT-hand/verso) page — here it lands on page 8. Prep the image with
 # scripts/spread-photo.py; see src/spreads/04-spread-photo.html.
 src/spreads/04-spread-photo.html
+
+# Closing blank leaf — pads the stub to an EVEN page count (saddle stitch needs
+# it). Drop this once your real sections already add up to an even total.
+src/spreads/_blank.html

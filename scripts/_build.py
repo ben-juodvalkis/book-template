@@ -422,9 +422,15 @@ def build_section_html(fragment, first_page_num=1, front_matter_pages=0, cfg=Non
 
 
 def weasyprint_render(html_path, pdf_path):
-    """Run WeasyPrint. Returns (success: bool, stderr: str)."""
+    """Run WeasyPrint. Returns (success: bool, stderr: str).
+
+    Invoked as `<this-interpreter> -m weasyprint` rather than a bare `weasyprint`
+    CLI so the render always uses the same Python that's running the build — it
+    works whether or not the virtualenv is activated, and needs no console script
+    on PATH. (`python -m weasyprint` is equivalent to the CLI.)
+    """
     result = subprocess.run(
-        ["weasyprint", "--base-url", PROJECT_ROOT, html_path, pdf_path],
+        [sys.executable, "-m", "weasyprint", "--base-url", PROJECT_ROOT, html_path, pdf_path],
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,

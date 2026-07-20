@@ -1,0 +1,18 @@
+# Python dependencies for the print-book build pipeline.
+#
+# Install into a virtual environment (see README "Quick start"):
+#   python3 -m venv .venv
+#   . .venv/bin/activate            # Windows: .venv\Scripts\activate
+#   pip install -r requirements.txt
+#
+# The versions below are the ones this template is validated against
+# (Python 3.11+). They are pinned for reproducible renders; loosen them only if
+# you need a different Python and a matching wheel isn't available.
+#
+# IMPORTANT: WeasyPrint also needs a few SYSTEM libraries (Pango, etc.) that pip
+# cannot install. See the README "Install the toolchain" section for the one-line
+# OS command, or use the provided Dockerfile for a known-good environment.
+
+weasyprint==69.0      # HTML/CSS -> PDF renderer (produces the bleed page natively)
+pikepdf==10.10.0      # PDF merge + per-page MediaBox/TrimBox (bleed parity)
+Pillow==12.3.0        # image prep (spread-photo.py) + shareable-draft rasterizer

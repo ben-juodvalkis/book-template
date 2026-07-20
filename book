@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+# Thin wrapper so you can type `./book <command>` instead of `python book.py ...`.
+# The real logic (and interpreter selection) lives in book.py, which is pure
+# stdlib, so any python3 can launch it.
+exec python3 "$(dirname "$0")/book.py" "$@"
