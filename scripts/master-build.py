@@ -31,10 +31,13 @@ from _build import (
     build_paths,
     build_section_html,
     count_page_divs,
+    geometry,
     load_config,
     load_spreads,
     merge_pdfs,
+    min_pages,
     read,
+    resolve_binding,
     spread_photo_parity_warnings,
     weasyprint_render,
     write,
@@ -120,8 +123,11 @@ def assert_safe_margins(pdf_path, fail_hard=False):
         return
 
     PT = 72.0
-    FOLD = OUT = 0.5
-    TB = 0.25
+    # Thresholds come from the resolved geometry (book.config), so the guard is
+    # correct for every page-size preset — not hardcoded to Blurb's 0.5"/0.25".
+    geom = geometry(CONFIG)
+    FOLD = geom["safe_binding"]; OUT = geom["safe_outside"]
+    TOP = geom["safe_top"]; BOT = geom["safe_bottom"]
 
     with pikepdf.open(pdf_path) as p:
         boxes = [([float(x) for x in pg.MediaBox], [float(x) for x in pg.TrimBox])
@@ -155,32 +161,34 @@ def assert_safe_margins(pdf_path, fail_hard=False):
         fold_d = tr if fold == "R" else tl
         out_d = tl if outside == "L" else tr
         if fold_d < FOLD - 0.01:
-            hard.append((i, "FOLD", round(fold_d, 3)))
+            hard.append((i, "FOLD", round(fold_d, 3), FOLD))
         if out_d < OUT - 0.01:
-            hard.append((i, "OUTSIDE", round(out_d, 3)))
-        if tt < TB - 0.01:
-            soft.append((i, "TOP", round(tt, 3)))
-        if tbo < TB - 0.01:
-            soft.append((i, "BOTTOM", round(tbo, 3)))
+            hard.append((i, "OUTSIDE", round(out_d, 3), OUT))
+        if tt < TOP - 0.01:
+            soft.append((i, "TOP", round(tt, 3), TOP))
+        if tbo < BOT - 0.01:
+            soft.append((i, "BOTTOM", round(tbo, 3), BOT))
 
     if soft:
         print(f"  Safe-margin: {len(soft)} TOP/BOTTOM near-edge text (often big-title "
               f"font-box artifacts — verify by eye):")
-        for pg, edge, v in soft:
-            print(f"      p{pg} {edge} {v}in from trim (min {TB})")
+        for pg, edge, v, mn in soft:
+            print(f"      p{pg} {edge} {v}in from trim (min {mn})")
     if hard:
         print(f"\n{'='*60}")
         print("  SAFE-MARGIN CHECK FAILED")
-        print("  Text ink crosses the binding/outside safe zone (min 0.5\" from trim).")
-        print("  Likely the div-overhang bug: a CSS inset of 0.5in lands 0.375\" from")
-        print("  trim — binding/outside content needs 0.625in from the .page div edge.")
-        for pg, edge, v in hard:
-            print(f"      p{pg} {edge} {v}in from trim (min {FOLD})")
+        print(f"  Text ink crosses the binding/outside safe zone (min {FOLD}\" binding, "
+              f"{OUT}\" outside, from trim).")
+        print(f"  Likely the div-overhang bug: a CSS inset lands one bleed ({geom['bleed']}\")")
+        print("  closer to trim than nominal — binding/outside content needs safe+bleed from the div edge.")
+        for pg, edge, v, mn in hard:
+            print(f"      p{pg} {edge} {v}in from trim (min {mn})")
         print(f"{'='*60}")
         if fail_hard:
             sys.exit(1)
     elif not soft:
-        print("  Safe-margin OK: all text clears 0.5\" binding/outside, 0.25\" top/bottom.")
+        print(f"  Safe-margin OK: all text clears {FOLD}\" binding / {OUT}\" outside, "
+              f"{TOP}\"/{BOT}\" top/bottom.")
 
 
 SPREADS = load_spreads()
@@ -227,11 +235,15 @@ def main():
 
         total_pages += page_count
 
-    print(f"\n  Total: {total_pages} pages")
+    binding = resolve_binding(CONFIG)
+    floor = min_pages(CONFIG, binding)
+    print(f"\n  Total: {total_pages} pages ({binding})")
     if total_pages % 2 != 0:
-        print(f"  WARNING: page count is ODD ({total_pages}) — saddle-stitch requires even.")
-    if total_pages < 20:
-        print(f"  WARNING: page count < 20 (Blurb minimum)")
+        need = ("saddle-stitch needs an even count (and imposes in multiples of 4)"
+                if binding == "saddle-stitch" else "perfect-bound needs an even count")
+        print(f"  WARNING: page count is ODD ({total_pages}) — {need}.")
+    if total_pages < floor:
+        print(f"  WARNING: page count < {floor} ({binding} minimum).")
 
     if html_only:
         print(f"\nDone (--html-only). Per-section HTML in {SECTIONS_DIR}/")

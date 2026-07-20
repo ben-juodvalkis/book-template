@@ -33,29 +33,89 @@ BUILDS_DIR = "builds"
 # (see geometry_css_vars), and print.css / design.css read them via var(). Verify
 # each preset against your printer's current spec sheet before shipping.
 PAGE_SIZE_PRESETS = {
+    # ── Saddle-stitch photo books (Blurb-style) ──────────────────────────────
     "blurb-8x10": {  # Blurb 8×10 portrait — the template default
         "trim_width": 8.0, "trim_height": 10.0, "bleed": 0.125,
         "safe_binding": 0.5, "safe_outside": 0.5, "safe_top": 0.25, "safe_bottom": 0.25,
-        "dpi": 300,
+        "dpi": 300, "binding": "saddle-stitch",
     },
     "blurb-7x7": {  # Blurb 7×7 square
         "trim_width": 7.0, "trim_height": 7.0, "bleed": 0.125,
         "safe_binding": 0.5, "safe_outside": 0.5, "safe_top": 0.25, "safe_bottom": 0.25,
-        "dpi": 300,
+        "dpi": 300, "binding": "saddle-stitch",
     },
     "blurb-10x8-landscape": {  # Blurb 10×8 landscape
         "trim_width": 10.0, "trim_height": 8.0, "bleed": 0.125,
         "safe_binding": 0.5, "safe_outside": 0.5, "safe_top": 0.25, "safe_bottom": 0.25,
-        "dpi": 300,
+        "dpi": 300, "binding": "saddle-stitch",
     },
     "us-letter": {  # 8.5×11 portrait
         "trim_width": 8.5, "trim_height": 11.0, "bleed": 0.125,
         "safe_binding": 0.5, "safe_outside": 0.5, "safe_top": 0.25, "safe_bottom": 0.25,
-        "dpi": 300,
+        "dpi": 300, "binding": "saddle-stitch",
+    },
+    # ── Perfect-bound trade sizes (KDP / IngramSpark / Lulu share these) ──────
+    # 0.125" bleed is the standard for US POD. The binding (gutter) safe margin
+    # GROWS with page count on perfect-bound books — 0.5" here is a safe starting
+    # value for books up to ~300 pages; increase safe_binding in book.config for
+    # thicker books (KDP: 0.625" for 301–500pp, 0.75" for 501–700pp). Always verify
+    # against your printer's current spec sheet.
+    "trade-6x9": {  # 6×9 — the most common paperback
+        "trim_width": 6.0, "trim_height": 9.0, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.375, "safe_top": 0.375, "safe_bottom": 0.375,
+        "dpi": 300, "binding": "perfect-bound",
+    },
+    "trade-5x8": {  # 5×8 — compact paperback
+        "trim_width": 5.0, "trim_height": 8.0, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.375, "safe_top": 0.375, "safe_bottom": 0.375,
+        "dpi": 300, "binding": "perfect-bound",
+    },
+    "trade-5.5x8.5": {  # 5.5×8.5 — US digest
+        "trim_width": 5.5, "trim_height": 8.5, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.375, "safe_top": 0.375, "safe_bottom": 0.375,
+        "dpi": 300, "binding": "perfect-bound",
+    },
+    "trade-8.5x11": {  # 8.5×11 — manuals, workbooks, photo-heavy trade
+        "trim_width": 8.5, "trim_height": 11.0, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.375, "safe_top": 0.375, "safe_bottom": 0.375,
+        "dpi": 300, "binding": "perfect-bound",
+    },
+    "square-8.5x8.5": {  # 8.5×8.5 — square perfect-bound photo book
+        "trim_width": 8.5, "trim_height": 8.5, "bleed": 0.125,
+        "safe_binding": 0.5, "safe_outside": 0.375, "safe_top": 0.375, "safe_bottom": 0.375,
+        "dpi": 300, "binding": "perfect-bound",
     },
 }
 
+# Service-named aliases for the canonical presets above. KDP, IngramSpark, and
+# Lulu all print the same standard trim sizes, so these resolve to one geometry —
+# pick whichever name you recognize. (Values still come from the target above;
+# verify margins against the service's live spec sheet, especially the gutter.)
+PAGE_SIZE_ALIASES = {
+    "kdp-6x9": "trade-6x9",
+    "ingramspark-6x9": "trade-6x9",
+    "lulu-6x9": "trade-6x9",
+    "kdp-5x8": "trade-5x8",
+    "kdp-5.5x8.5": "trade-5.5x8.5",
+    "lulu-5.5x8.5": "trade-5.5x8.5",
+    "kdp-8.5x11": "trade-8.5x11",
+    "kdp-square-8.5": "square-8.5x8.5",
+}
+
 DEFAULT_PAGE_SIZE = "blurb-8x10"
+
+# Paper stock -> PPI (pages per inch), used to compute a perfect-bound spine:
+#   spine_inches = page_count / ppi
+# These are typical POD values; confirm against your printer/paper before print.
+PAPER_STOCKS = {
+    "white":        444,   # KDP white / standard 50–60# uncoated
+    "cream":        370,   # KDP cream novel stock
+    "standard-color": 400, # KDP standard-color paper
+    "premium-color": 340,  # KDP premium-color / heavier photo stock
+    "blurb-standard": 460, # Blurb standard paper (approx.)
+}
+DEFAULT_PAPER_PPI = PAPER_STOCKS["white"]
+DEFAULT_BINDING = "saddle-stitch"
 
 # Geometry fields a book may override individually in book.config. Length fields
 # are in inches (accept `8`, `8in`, or `203mm`); dpi is an integer. Any field left
@@ -72,8 +132,18 @@ CONFIG_DEFAULTS = {
     # opening page, blank, title, contents, etc.). Arabic numbering restarts at 1
     # on the first body page after them. 0 = number every page from 1 (simple book).
     "front_matter_pages": 0,
-    # Page-size preset name (see PAGE_SIZE_PRESETS).
+    # Page-size preset name (see PAGE_SIZE_PRESETS / PAGE_SIZE_ALIASES).
     "page_size": DEFAULT_PAGE_SIZE,
+    # Binding style: "saddle-stitch" or "perfect-bound". None = inherit from the
+    # selected preset. Drives the page-count sanity check and the cover/spine math.
+    "binding_type": None,
+    # Minimum page count the build warns below. None = a binding-aware default
+    # (saddle-stitch 20, perfect-bound 24).
+    "min_pages": None,
+    # Perfect-bound spine math (see scripts/cover.py). paper_stock names a PAPER_STOCKS
+    # entry; paper_ppi overrides it with an explicit pages-per-inch value.
+    "paper_stock": None,
+    "paper_ppi": None,
     # Per-field geometry overrides; None = inherit from the selected preset.
     **{k: None for k in GEOMETRY_KEYS},
 }
@@ -111,17 +181,17 @@ def load_config():
             key, val = (s.strip() for s in line.split("=", 1))
             if key not in CONFIG_DEFAULTS:
                 print(f"  {BOOK_CONFIG}: warning — unknown key {key!r} (kept anyway)")
-            if key == "front_matter_pages":
+            if key in ("front_matter_pages", "min_pages"):
                 try:
                     val = int(val)
                 except ValueError:
                     print(f"  {BOOK_CONFIG}: {key} must be an integer, got {val!r}; using default")
                     val = CONFIG_DEFAULTS[key]
-            elif key == "dpi":
+            elif key in ("dpi", "paper_ppi"):
                 try:
                     val = int(float(val))
                 except ValueError:
-                    print(f"  {BOOK_CONFIG}: dpi must be a number, got {val!r}; ignoring")
+                    print(f"  {BOOK_CONFIG}: {key} must be a number, got {val!r}; ignoring")
                     val = None
             elif key in GEOMETRY_LENGTH_KEYS:
                 try:
@@ -140,6 +210,7 @@ def resolve_geometry(cfg):
     preset name falls back to DEFAULT_PAGE_SIZE with a warning.
     """
     name = cfg.get("page_size") or DEFAULT_PAGE_SIZE
+    name = PAGE_SIZE_ALIASES.get(name, name)   # service-named aliases -> canonical
     if name not in PAGE_SIZE_PRESETS:
         print(f"  {BOOK_CONFIG}: unknown page_size {name!r}; using {DEFAULT_PAGE_SIZE!r}")
         name = DEFAULT_PAGE_SIZE
@@ -148,6 +219,98 @@ def resolve_geometry(cfg):
         if cfg.get(k) is not None:
             base[k] = cfg[k]
     return base
+
+
+def resolve_binding(cfg=None, geom=None):
+    """Effective binding style: explicit book.config wins, else the preset's, else default."""
+    cfg = cfg if cfg is not None else load_config()
+    bt = cfg.get("binding_type")
+    if bt:
+        return bt
+    geom = geom if geom is not None else geometry(cfg)
+    return geom.get("binding") or DEFAULT_BINDING
+
+
+def min_pages(cfg=None, binding=None):
+    """Page-count floor the build warns below. Explicit book.config wins, else
+    a binding-aware default (saddle-stitch 20, perfect-bound 24)."""
+    cfg = cfg if cfg is not None else load_config()
+    if cfg.get("min_pages") is not None:
+        return cfg["min_pages"]
+    binding = binding or resolve_binding(cfg)
+    return 24 if binding == "perfect-bound" else 20
+
+
+def resolve_ppi(cfg=None):
+    """Pages-per-inch for the spine calc: explicit paper_ppi wins, else the named
+    paper_stock, else the white-paper default. Unknown stock names warn."""
+    cfg = cfg if cfg is not None else load_config()
+    if cfg.get("paper_ppi"):
+        return int(cfg["paper_ppi"])
+    stock = cfg.get("paper_stock")
+    if stock:
+        if stock in PAPER_STOCKS:
+            return PAPER_STOCKS[stock]
+        print(f"  {BOOK_CONFIG}: unknown paper_stock {stock!r}; using white "
+              f"({DEFAULT_PAPER_PPI} ppi). Known: {', '.join(PAPER_STOCKS)}")
+    return DEFAULT_PAPER_PPI
+
+
+def spine_width_in(page_count, ppi):
+    """Perfect-bound spine width in inches = page_count / pages-per-inch."""
+    return page_count / float(ppi)
+
+
+def cover_geometry(page_count, cfg=None):
+    """Derived geometry for a perfect-bound wraparound cover (ONE flat sheet).
+
+    Layout across the sheet: [outside bleed | BACK cover | SPINE | FRONT cover |
+    outside bleed], full trim height plus top/bottom bleed. Keys (inches):
+      spine_w                 page_count / ppi
+      cover_trim_w/h          flat cover trim (2*trim + spine) x trim_h
+      cover_div_w/h           the .cover element incl. bleed on all four sides
+      back_w / front_w        panel widths incl. their one outside bleed
+      ppi                     pages-per-inch used
+    Also carries through trim_width/height, bleed, and the safe insets so the
+    cover render reuses the same var() names as the interior.
+    """
+    cfg = cfg if cfg is not None else load_config()
+    g = geometry(cfg)
+    tw, th, bl = g["trim_width"], g["trim_height"], g["bleed"]
+    ppi = resolve_ppi(cfg)
+    spine = spine_width_in(page_count, ppi)
+    d = dict(g)
+    d.update({
+        "page_count": page_count,
+        "ppi": ppi,
+        "spine_w": spine,
+        "cover_trim_w": 2 * tw + spine,
+        "cover_trim_h": th,
+        "cover_div_w": 2 * tw + spine + 2 * bl,
+        "cover_div_h": th + 2 * bl,
+        "back_w": tw + bl,     # back panel incl. its outside (left) bleed
+        "front_w": tw + bl,    # front panel incl. its outside (right) bleed
+    })
+    return d
+
+
+def cover_css_vars(cov):
+    """:root custom properties for the cover render (mirrors geometry_css_vars)."""
+    v = cov
+    return (
+        "<style>\n"
+        "/* Cover geometry — generated from book.config + page count by scripts/cover.py. */\n"
+        ":root {\n"
+        f"  --trim-w: {_css_in(v['trim_width'])}; --trim-h: {_css_in(v['trim_height'])}; --bleed: {_css_in(v['bleed'])};\n"
+        f"  --spine-w: {_css_in(v['spine_w'])};\n"
+        f"  --cover-trim-w: {_css_in(v['cover_trim_w'])}; --cover-trim-h: {_css_in(v['cover_trim_h'])};\n"
+        f"  --cover-div-w: {_css_in(v['cover_div_w'])}; --cover-div-h: {_css_in(v['cover_div_h'])};\n"
+        f"  --back-w: {_css_in(v['back_w'])}; --front-w: {_css_in(v['front_w'])}; --page-margin: {_css_in(-v['bleed'])};\n"
+        f"  --safe-binding: {_css_in(v['css_safe_binding'])}; --safe-outside: {_css_in(v['css_safe_outside'])};\n"
+        f"  --safe-top: {_css_in(v['css_safe_top'])}; --safe-bottom: {_css_in(v['css_safe_bottom'])};\n"
+        "}\n"
+        "</style>"
+    )
 
 
 def geometry(cfg=None):

@@ -9,10 +9,12 @@ Commands
   build [--no-trim] [--html-only]     Build the whole book -> builds/<slug>/
   section <name> [opts]               Build one section -> .temp/  (iteration)
   page <name> --page N[-M] [opts]     Build one page (or range) -> .temp/
-  trimmed | preview [--no-draft]      Trim-crop the master to an 8x10 preview
+  trimmed | preview [--no-draft]      Trim-crop the master to a trim-size preview
   draft [--in P] [--dpi N] [...]      Rasterize a build PDF to a small, emailable draft
+  cover --pages N [--stock S] [...]   Render a perfect-bound cover (spine from page count)
   spread-photo <img> [opts]           Crop a photo to the cross-gutter spread ratio
   doctor                              Check the toolchain (Python libs + optional tools)
+  test [pytest args]                  Run the geometry/helper test suite (needs pytest)
   help                                Show this message
 
 Every command except `doctor`/`help` forwards its options straight to the
@@ -43,6 +45,7 @@ COMMANDS = {
     "trimmed":      "master-build-trimmed.py",
     "preview":      "master-build-trimmed.py",   # alias for `trimmed`
     "draft":        "master-build-draft.py",
+    "cover":        "cover.py",
     "spread-photo": "spread-photo.py",
 }
 
@@ -163,6 +166,10 @@ def main():
     cmd, rest = argv[0], argv[1:]
     if cmd == "doctor":
         sys.exit(doctor())
+    if cmd == "test":
+        python = resolve_python()
+        sys.exit(subprocess.run([python, "-m", "pytest", os.path.join(HERE, "tests"), *rest],
+                                env=child_env(python)).returncode)
     if cmd not in COMMANDS:
         print(f"Unknown command: {cmd!r}\n")
         sys.exit(usage(2))

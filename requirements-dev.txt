@@ -1,0 +1,8 @@
+# Extra dependencies for developing the template itself (running the tests).
+# Not needed just to build a book — see requirements.txt for that.
+#
+#   pip install -r requirements-dev.txt
+#   ./book test            # or: pytest
+
+-r requirements.txt
+pytest==8.4.2

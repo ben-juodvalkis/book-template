@@ -59,10 +59,12 @@ bundles all of this for a known-good build on any OS.
 
 ./book section 01-title           # one section → .temp/
 ./book page    01-title --page 2  # one page (or 2-4) → .temp/
-./book trimmed                    # trim-cropped 8×10 preview + draft (alias: preview)
+./book trimmed                    # trim-cropped preview + draft (alias: preview)
 ./book draft                      # small shareable rasterized draft
+./book cover --pages 120          # perfect-bound cover; spine = pages ÷ paper ppi
 ./book spread-photo assets/raw.jpg  # prep a cross-gutter photo → assets/raw-spread.jpg
 ./book doctor                     # check the toolchain (Python libs + optional tools)
+./book test                       # run the geometry/helper test suite (needs pytest)
 ```
 
 `./book <cmd>` just forwards to the matching `scripts/master-*.py` with the right
@@ -153,6 +155,29 @@ full-bleed closing page) absorbs the odd page a leading blank introduces.
 
 ---
 
+## Binding, page sizes & covers
+
+`book.config` picks a `page_size` preset and a `binding_type`. Presets cover
+saddle-stitch photo books (`blurb-*`, `us-letter`) and perfect-bound trade sizes
+(`trade-6x9`, `trade-5.5x8.5`, …); service-named aliases (`kdp-6x9`,
+`ingramspark-6x9`, `lulu-6x9`, …) resolve to the same geometry. Binding is
+inherited from the preset unless set explicitly, and drives two things:
+
+- **Page-count check** — saddle-stitch wants multiples of 4 (the build warns on
+  odd; imposition detail noted in `book.config`); perfect-bound needs an even
+  count and a binding safe margin that grows with thickness.
+- **Cover/spine** — `./book cover --pages N` renders a perfect-bound wraparound
+  cover (back + spine + front) as one flat sheet. Spine width = `page_count ÷
+  paper_ppi` (name a `paper_stock` or pass `--ppi`). Geometry is computed in
+  `_build.cover_geometry`; layout is `src/styles/cover.css`, content is
+  `src/cover/cover.html`. The cover render is symmetric-bleed and standalone — it
+  does NOT use `print.css`.
+
+The safe-margin guard reads its thresholds from the resolved geometry, so it's
+correct for every preset (not hardcoded to Blurb's 0.5"/0.25").
+
+---
+
 ## Non-Negotiable Print Rules
 
 **Page dimensions (Blurb 8×10 default — set trim/bleed/safe margins in `book.config`)**
@@ -219,7 +244,7 @@ and ADR 0002 (`docs/adr/`).
 | `book.spreads` | **Ordered section list** — the one file you edit to wire up the book |
 | `book.config` | Per-book settings: **page size / bleed / safe margins** (preset + overrides) and `front_matter_pages`. Single source of truth for geometry |
 | `book` / `book.py` | The CLI you run (`./book build`, `./book doctor`, …); dispatches to the scripts with the right interpreter. `book.cmd` is the Windows shim |
-| `requirements.txt` | Pinned Python deps (`weasyprint`, `pikepdf`, `Pillow`) for a reproducible virtualenv |
+| `requirements.txt` / `requirements-dev.txt` | Pinned build deps (`weasyprint`, `pikepdf`, `Pillow`); dev adds `pytest` |
 | `Dockerfile` | Known-good, cross-platform build environment (also bundles the system libraries and `mutool`/`pdftotext`) |
 | `src/spreads/_blank.html` | Reusable blank page (single-opening-page + even-count padding) |
 | `src/spreads/04-spread-photo.html` | Cross-gutter photo stub — one image across both facing pages |
@@ -229,7 +254,10 @@ and ADR 0002 (`docs/adr/`).
 | `scripts/master-build-section.py` | Single-section build for iteration |
 | `scripts/master-build-page.py` | Single-page build for iteration |
 | `scripts/spread-photo.py` | Cover-crop a photo to the spread aspect ratio for a cross-gutter image |
-| `scripts/_build.py` | Shared rendering primitives + `load_spreads()` + geometry/`load_config()` + `builds/<slug>/` scheme |
+| `scripts/cover.py` | Render a perfect-bound cover; spine width from page count ÷ paper ppi |
+| `scripts/_build.py` | Shared rendering primitives + `load_spreads()` + geometry/`load_config()` + presets/aliases + spine/cover math + `builds/<slug>/` scheme |
+| `tests/` | pytest suite for the geometry/spine math and build helpers (`./book test`) |
+| `src/cover/cover.html` / `src/styles/cover.css` | Perfect-bound cover content + layout (standalone; not print.css) |
 | `src/spreads/` | Spread source files (start from the stubs) |
 | `src/styles/print.css` | Print geometry rules — @page/bleed/safe zones (values come from `book.config` via injected CSS variables) |
 | `src/styles/design.css` | Palette + typography + layout components (customize per book) |

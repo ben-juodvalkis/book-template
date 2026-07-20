@@ -32,15 +32,22 @@ jobs:
             libpango-1.0-0 libpangoft2-1.0-0 poppler-utils fonts-dejavu-core
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements-dev.txt   # build deps + pytest
 
       - name: Check the toolchain
         run: ./book doctor
+
+      - name: Run the test suite
+        run: ./book test
 
       # --no-trim skips the raster draft (which needs mutool) but still runs the
       # full render, the merge, and BOTH print-safety guards.
       - name: Build the book
         run: ./book build --no-trim
+
+      # Render a perfect-bound cover too, so the cover/spine path is exercised in CI.
+      - name: Build a sample cover
+        run: ./book cover --pages 120
 
       - name: Upload the rendered PDF
         if: always()

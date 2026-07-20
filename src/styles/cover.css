@@ -1,0 +1,85 @@
+/*
+  cover.css — @page + layout for a PERFECT-BOUND wraparound cover.
+
+  A perfect-bound cover is ONE flat sheet printed as a single page:
+      [ outside bleed | BACK cover | SPINE | FRONT cover | outside bleed ]
+  full trim height plus top/bottom bleed. Unlike the interior, bleed here is
+  SYMMETRIC (all four outer edges of the flat sheet bleed), so this stylesheet
+  has its own @page rule and is NOT used together with print.css.
+
+  All geometry comes from CSS variables injected by scripts/cover.py
+  (_build.cover_css_vars) — trim size, bleed, spine width, panel widths, and the
+  safe insets. The var() fallbacks are the Blurb 8×10 default with a ~0.4" spine.
+*/
+
+@page {
+  size: var(--cover-trim-w, 16.4in) var(--cover-trim-h, 10in) !important;
+  bleed: var(--bleed, 0.125in) !important;   /* symmetric around the flat cover */
+  margin: 0;
+  marks: none;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: var(--cover-div-w, 16.65in);
+  height: var(--cover-div-h, 10.25in);
+}
+
+/* The flat cover, pushed out by one bleed so it reaches into the bleed on all
+   four sides (WeasyPrint clips at the page canvas). */
+.cover {
+  position: relative;
+  width: var(--cover-div-w, 16.65in);
+  height: var(--cover-div-h, 10.25in);
+  margin: var(--page-margin, -0.125in);
+  overflow: hidden;
+  background: var(--paper, #fff);
+}
+
+/* Three panels, laid left -> right. Widths include each panel's outside bleed;
+   the spine sits between them. */
+.cover-back, .cover-spine, .cover-front {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.cover-back  { left: 0; width: var(--back-w, 8.125in); }
+.cover-spine { left: var(--back-w, 8.125in); width: var(--spine-w, 0.4in); }
+.cover-front { left: calc(var(--back-w, 8.125in) + var(--spine-w, 0.4in)); width: var(--front-w, 8.125in); }
+
+/* Content-safe box inside a panel. Conservative: uses the outside inset (which
+   already includes one bleed) on all sides, so content clears the trim and never
+   runs into the spine fold. */
+.cover-safe {
+  position: absolute;
+  top: var(--safe-top, 0.375in);
+  bottom: var(--safe-bottom, 0.375in);
+  left: var(--safe-outside, 0.625in);
+  right: var(--safe-outside, 0.625in);
+}
+
+/* Spine text runs bottom-to-top by convention. Only add it when the spine is
+   thick enough (cover.py warns under ~0.0625"). */
+.cover-spine .spine-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
+  transform-origin: center;
+  white-space: nowrap;
+  font-size: 11pt;
+  letter-spacing: 0.04em;
+  color: var(--ink, #000);
+}
+
+/* Default cover type — restyle freely in design.css or here. */
+.cover-front .front-title { font-size: 40pt; line-height: 1.05; color: var(--ink, #000); }
+.cover-front .front-subtitle { margin-top: 0.25in; font-size: 15pt; color: var(--ink, #000); }
+.cover-back .back-blurb { font-size: 12pt; line-height: 1.45; color: var(--ink, #000); max-width: 4.5in; }
+.cover-back .back-barcode {
+  position: absolute; right: 0; bottom: 0;
+  width: 2in; height: 1.2in;
+  border: 1px dashed #999; color: #999; font-size: 9pt;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+}
