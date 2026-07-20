@@ -306,12 +306,19 @@ spread and each page is offset to show its half, so they meet exactly at the fol
 no cutting the image, no hand-tuned offsets, and it re-derives automatically if you
 change page size in `book.config`.
 
-First cover-crop the photo to the spread's aspect ratio (the tool reads
-`book.config`, so the ratio is right for any page size, and it warns below 300 DPI):
+First fit the photo to the spread — a **cover** crop to the spread's aspect ratio, so
+it fills without stretching (the tool reads `book.config`, so the ratio is right for
+any page size, and it warns below 300 DPI). `--focus` picks which part to keep;
+`--zoom` crops in tighter (magnify):
 
 ```
-python3 scripts/spread-photo.py assets/raw.jpg --focus center   # → assets/raw-spread.jpg
+python3 scripts/spread-photo.py assets/raw.jpg                    # cover, centered → assets/raw-spread.jpg
+python3 scripts/spread-photo.py assets/raw.jpg --focus left --zoom 1.3
 ```
+
+(Dropping a raw `url()` straight onto the classes forces the spread's aspect ratio and
+will *stretch* a mismatched photo — run the tool first so the placed image already
+matches.)
 
 Then place it — `.spread-photo-verso` on the LEFT-hand (even) page,
 `.spread-photo-recto` on the RIGHT-hand (odd) page facing it:

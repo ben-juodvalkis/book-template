@@ -214,9 +214,10 @@ viewport units.
 
 For a **full-spread (cross-gutter) photo** — one image across both facing pages —
 copy `04-spread-photo.html`, prep the image with `python3 scripts/spread-photo.py
-assets/your.jpg`, and point both pages at the output. The section must start on an
-even page (verso); the build warns if a spread photo lands on the wrong hand. See
-`docs/DESIGN-LANGUAGE.md`.
+assets/your.jpg` (fills without stretching; `--focus`/`--zoom` control the crop), and
+point both pages at the output. The section must start on an even page (verso); the
+build warns if a spread photo lands on the wrong hand. See `docs/DESIGN-LANGUAGE.md`
+and ADR 0002 (`docs/adr/`).
 
 ---
 
