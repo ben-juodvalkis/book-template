@@ -18,7 +18,13 @@ full-bleed photo books — but the pipeline works for any HTML-laid-out book.
 - **A bleed-parity guard** that fails the build if the odd/even bleed side is
   ever wrong (an easy mistake that ruins a print run).
 - **A safe-margin check** so ink never lands too close to the trim or binding.
-- **One `./book` CLI** for every step, with a `./book doctor` toolchain check.
+- **Saddle-stitch *and* perfect-bound** page-size presets (Blurb, plus
+  KDP/IngramSpark/Lulu trade sizes) and a **cover generator** that computes the
+  spine from your page count.
+- **Content tools** — generate photo-grid pages from a folder, self-host fonts for
+  reproducible renders, and a live browser preview for fast iteration.
+- **One `./book` CLI** for every step (`init`, `build`, `cover`, `generate`,
+  `fonts`, `preview-web`, `doctor`, `test`).
 - **A reproducible, cross-platform toolchain** — a virtualenv + pinned deps, or a
   bundled `Dockerfile` — plus **CI** that renders the book and runs the guards on
   every push.
@@ -96,10 +102,15 @@ the bleed-parity and safe-margin guards automatically.
 
 After clicking "Use this template" (or cloning), make it yours:
 
-1. Do the five quick-start steps above.
-2. Replace the stub spreads and the sample `book.spreads` with your sections.
-3. Update this `README.md` and the `LICENSE` copyright line for your project.
-4. Commit — CI will render your book and run the guards on every push.
+1. Install the toolchain (step 1 above), then run **`./book init`** — it sets your
+   title, page size, and license holder and resets `book.spreads` to a clean
+   start. (Try `./book init --dry-run` first to see what it will change.)
+2. Replace the stub spreads with your sections — copy from `src/spreads/`, or
+   `./book generate gallery <folder>` — listing them in `book.spreads` in page order.
+3. Pick your palette and type in `src/styles/design.css`; self-host fonts with
+   `./book fonts` for reproducible output.
+4. Rewrite this `README.md` for your book.
+5. Commit — CI renders your book and runs the guards on every push.
 
 ## Layout
 
@@ -114,9 +125,10 @@ src/spreads/        # spread HTML (start from the stubs)
 src/styles/         # print.css (geometry, don't touch) + design.css (your palette/type)
 src/master-*.html   # head/body wrappers
 assets/             # photos (gitignored except the placeholder)
+fonts/              # self-hosted fonts + manifest (./book fonts) — reproducible renders
 printer-specs/      # your printer's ICC profile (gitignored)
-docs/               # design language, Acrobat checklist, ADRs, and optional recipes
-.github/workflows/  # CI that renders the book and runs the print-safety guards
+docs/               # design language, Acrobat checklist, fonts, showcase, ADRs, recipes
+.github/            # CI that renders the book + runs the guards, and issue/PR templates
 ```
 
 See **CLAUDE.md** for the full pipeline reference, the canonical page-orientation
@@ -135,6 +147,8 @@ required.
 
 ## Contributing
 
-Issues and pull requests are welcome. CI renders the sample book and runs the
-bleed-parity and safe-margin guards on every PR, so you'll know immediately if a
-change breaks the print geometry.
+Issues and pull requests are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md)
+and the [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md). CI renders the sample book and
+runs the bleed-parity and safe-margin guards on every PR, so you'll know
+immediately if a change breaks the print geometry. Notable changes are tracked in
+[`CHANGELOG.md`](CHANGELOG.md).

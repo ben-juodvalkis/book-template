@@ -6,6 +6,7 @@ Run it directly (`python book.py <command>`), or via the thin wrappers `./book`
 (macOS/Linux) and `book.cmd` (Windows) so you don't have to type `python`.
 
 Commands
+  init [--title T] [--author A] ...   Turn the demo into a fresh book (run once after cloning)
   build [--no-trim] [--html-only]     Build the whole book -> builds/<slug>/
   section <name> [opts]               Build one section -> .temp/  (iteration)
   page <name> --page N[-M] [opts]     Build one page (or range) -> .temp/
@@ -42,6 +43,7 @@ SCRIPTS = os.path.join(HERE, "scripts")
 
 # Subcommand -> script filename in scripts/. Aliases point at the same script.
 COMMANDS = {
+    "init":         "init.py",
     "build":        "master-build.py",
     "section":      "master-build-section.py",
     "page":         "master-build-page.py",

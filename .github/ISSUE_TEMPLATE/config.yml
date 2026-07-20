@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Pipeline reference & print rules
+    url: https://github.com/ben-juodvalkis/book-template/blob/main/CLAUDE.md
+    about: The full build reference, page-orientation rules, and non-negotiable print rules.
+  - name: Design language & recipes
+    url: https://github.com/ben-juodvalkis/book-template/blob/main/docs/DESIGN-LANGUAGE.md
+    about: Copy-paste recipes for photo cards, color blocks, type, and layout.

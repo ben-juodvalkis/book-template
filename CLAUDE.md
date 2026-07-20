@@ -53,6 +53,7 @@ bundles all of this for a known-good build on any OS.
 ### Commands
 
 ```
+./book init                  # turn the demo into a fresh book (run once after cloning)
 ./book build                 # render all sections + merge → builds/<slug>/
 ./book build --no-trim       # master PDF only (skip trimmed + draft)
 ./book build --html-only     # write per-section wrapped HTML, skip render
@@ -263,6 +264,7 @@ and ADR 0002 (`docs/adr/`).
 | `book.spreads` | **Ordered section list** — the one file you edit to wire up the book |
 | `book.config` | Per-book settings: **page size / bleed / safe margins** (preset + overrides) and `front_matter_pages`. Single source of truth for geometry |
 | `book` / `book.py` | The CLI you run (`./book build`, `./book doctor`, …); dispatches to the scripts with the right interpreter. `book.cmd` is the Windows shim |
+| `scripts/init.py` | `./book init` — set title/page-size/license and reset `book.spreads` for a fresh book |
 | `requirements.txt` / `requirements-dev.txt` | Pinned build deps (`weasyprint`, `pikepdf`, `Pillow`); dev adds `pytest` |
 | `Dockerfile` | Known-good, cross-platform build environment (also bundles the system libraries and `mutool`/`pdftotext`) |
 | `src/spreads/_blank.html` | Reusable blank page (single-opening-page + even-count padding) |
